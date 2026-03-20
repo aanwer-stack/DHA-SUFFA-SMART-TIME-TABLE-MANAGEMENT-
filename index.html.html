@@ -1,0 +1,2791 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dha Suffa University — Smart Timetable Management</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{--bg:#0b0e14;--sf:#13171f;--sf2:#1c2130;--bd:#252c3d;--ac:#4f8ef7;--ac2:#7c5cfc;--warn:#f7a24f;--danger:#f75f5f;--ok:#4fd18e;--txt:#e8ecf5;--mu:#6b7898;--merge:#a855f7;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'DM Mono',monospace;background:var(--bg);color:var(--txt);min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(79,142,247,.04)1px,transparent 1px),linear-gradient(90deg,rgba(79,142,247,.04)1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0;}
+
+header{position:sticky;top:0;z-index:100;padding:12px 24px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--bd);background:rgba(11,14,20,.97);backdrop-filter:blur(12px);}
+.logo{font-family:'Syne',sans-serif;font-size:19px;font-weight:800;letter-spacing:-1px;}
+.logo span{color:var(--ac);}
+.logo sub{font-size:10px;color:var(--mu);font-weight:400;margin-left:4px;letter-spacing:0;}
+.hdr-right{display:flex;align-items:center;gap:10px;}
+#hdr-clash{padding:4px 12px;border-radius:20px;font-size:11px;font-weight:700;font-family:'Syne',sans-serif;transition:all .3s;}
+.c-ok{background:rgba(79,209,142,.15);color:var(--ok);border:1px solid rgba(79,209,142,.3);}
+.c-bad{background:var(--danger);color:#fff;animation:pulseH 1.5s infinite;}
+@keyframes pulseH{0%,100%{opacity:1;}50%{opacity:.65;}}
+
+.layout{display:flex;min-height:calc(100vh - 50px);position:relative;z-index:1;}
+.sidenav{width:210px;background:var(--sf);border-right:1px solid var(--bd);padding:10px 8px;flex-shrink:0;display:flex;flex-direction:column;gap:2px;overflow-y:auto;}
+.nl{font-family:'Syne',sans-serif;font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--mu);padding:9px 12px 3px;}
+.ni{display:flex;align-items:center;gap:9px;padding:8px 12px;border-radius:8px;cursor:pointer;font-family:'Syne',sans-serif;font-size:12px;font-weight:600;color:var(--mu);transition:all .15s;border:1px solid transparent;user-select:none;}
+.ni:hover{color:var(--txt);background:var(--sf2);}
+.ni.active{color:var(--ac);background:rgba(79,142,247,.1);border-color:rgba(79,142,247,.22);}
+.ni .ic{font-size:13px;width:17px;text-align:center;}
+.ndiv{height:1px;background:var(--bd);margin:4px 8px;}
+.cp{padding:10px;margin-top:auto;border-top:1px solid var(--bd);}
+.cp-ttl{font-family:'Syne',sans-serif;font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--mu);margin-bottom:7px;}
+.cpi{background:rgba(247,95,95,.08);border:1px solid rgba(247,95,95,.28);border-radius:7px;padding:7px 9px;font-size:10px;margin-bottom:4px;}
+.cpi-t{font-family:'Syne',sans-serif;font-size:9px;font-weight:700;color:var(--danger);text-transform:uppercase;margin-bottom:2px;}
+.cpi-d{color:var(--mu);line-height:1.4;}
+.cp-ok{color:var(--ok);font-size:11px;display:flex;align-items:center;gap:5px;padding:7px 9px;background:rgba(79,209,142,.06);border:1px solid rgba(79,209,142,.18);border-radius:7px;}
+
+.main{flex:1;padding:18px 22px;overflow-y:auto;max-height:calc(100vh - 50px);}
+.pg{display:none;}.pg.show{display:block;}
+.ph{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px;}
+.pht{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;}
+.pht span{color:var(--ac);}
+.ph-acts{display:flex;gap:7px;flex-wrap:wrap;}
+.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:9px;margin-bottom:18px;}
+.sc{background:var(--sf);border:1px solid var(--bd);border-radius:10px;padding:13px 15px;}
+.scv{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;}
+.scl{font-size:10px;color:var(--mu);margin-top:2px;}
+
+/* TIMETABLE */
+.tt-wrap{overflow-x:auto;}
+.tt{min-width:780px;border:1px solid var(--bd);border-radius:11px;overflow:hidden;}
+.tt-head{display:grid;background:var(--sf2);border-bottom:1px solid var(--bd);}
+.tt-hc{padding:9px 4px;text-align:center;font-family:'Syne',sans-serif;font-size:11px;font-weight:700;color:var(--mu);}
+.tt-row{display:grid;border-bottom:1px solid var(--bd);}
+.tt-row:last-child{border-bottom:none;}
+.tt-time-cell{padding:4px 6px;font-size:10px;color:var(--mu);display:flex;align-items:center;justify-content:center;background:var(--sf);border-right:1px solid var(--bd);cursor:pointer;transition:background .15s;position:relative;}
+.tt-time-cell:hover{background:rgba(79,142,247,.08);}
+.tt-time-cell:hover .edit-time-btn{opacity:1;}
+.edit-time-btn{position:absolute;right:3px;top:50%;transform:translateY(-50%);font-size:9px;color:var(--ac);opacity:0;transition:opacity .15s;background:none;border:none;cursor:pointer;padding:1px 3px;}
+.tt-cell{padding:3px;min-height:60px;background:var(--sf);border-right:1px solid var(--bd);position:relative;transition:background .12s;cursor:pointer;}
+.tt-cell:last-child{border-right:none;}
+.tt-cell.emp:hover{background:rgba(79,142,247,.05);}
+.tt-cell.emp:hover .ahint{opacity:1;}
+.ahint{position:absolute;inset:3px;display:flex;align-items:center;justify-content:center;border:1px dashed rgba(79,142,247,.28);border-radius:6px;color:rgba(79,142,247,.4);font-size:14px;opacity:0;transition:opacity .2s;pointer-events:none;}
+.slot{width:100%;height:100%;min-height:54px;border-radius:6px;padding:5px 6px;font-size:10px;cursor:pointer;position:relative;overflow:hidden;transition:transform .12s;}
+.slot:hover{transform:scale(1.02);}
+.s-ok{background:rgba(79,142,247,.13);border:1px solid rgba(79,142,247,.38);}
+.s-clash{background:rgba(247,95,95,.17);border:1px solid rgba(247,95,95,.55);}
+.s-merged{background:rgba(168,85,247,.13);border:1px solid rgba(168,85,247,.45);}
+.s-merged-clash{background:rgba(247,95,95,.17);border:2px dashed rgba(168,85,247,.7);}
+.s-subj{font-family:'Syne',sans-serif;font-size:10px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.s-meta{color:var(--mu);font-size:9px;line-height:1.45;}
+.s-strength{position:absolute;top:3px;right:3px;background:rgba(79,142,247,.25);color:var(--ac);font-size:8px;font-weight:700;border-radius:3px;padding:1px 4px;font-family:'Syne',sans-serif;}
+.s-merged-badge{position:absolute;top:3px;right:3px;background:rgba(168,85,247,.3);color:var(--merge);font-size:8px;font-weight:700;border-radius:3px;padding:1px 4px;font-family:'Syne',sans-serif;}
+.s-clash-pip{position:absolute;top:3px;right:3px;background:var(--danger);color:#fff;font-size:8px;font-weight:700;border-radius:3px;padding:1px 4px;font-family:'Syne',sans-serif;}
+.sdel{position:absolute;bottom:2px;right:2px;background:rgba(247,95,95,.22);border:none;border-radius:3px;color:var(--danger);font-size:9px;padding:1px 5px;cursor:pointer;display:none;font-weight:700;}
+.slot:hover .sdel{display:block;}
+.sedit{position:absolute;bottom:2px;left:2px;background:rgba(79,142,247,.22);border:none;border-radius:3px;color:var(--ac);font-size:9px;padding:1px 5px;cursor:pointer;display:none;font-weight:700;}
+.slot:hover .sedit{display:block;}
+
+/* FILTER BAR */
+.fbar{display:flex;gap:9px;margin-bottom:14px;flex-wrap:wrap;align-items:center;background:var(--sf);border:1px solid var(--bd);border-radius:10px;padding:10px 13px;}
+.fbar-label{font-family:'Syne',sans-serif;font-size:10px;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:.5px;white-space:nowrap;}
+.fbar select,.fbar input[type=text]{background:var(--sf2);border:1px solid var(--bd);border-radius:7px;padding:6px 11px;color:var(--txt);font-family:'DM Mono',monospace;font-size:11px;outline:none;cursor:pointer;}
+.fbar select:focus{border-color:var(--ac);}
+.view-btns{display:flex;gap:4px;margin-left:auto;}
+.vbtn{padding:5px 13px;border-radius:7px;font-family:'Syne',sans-serif;font-size:11px;font-weight:700;cursor:pointer;border:1px solid var(--bd);background:var(--sf2);color:var(--mu);transition:all .15s;}
+.vbtn.active,.vbtn:hover{border-color:var(--ac);color:var(--ac);background:rgba(79,142,247,.08);}
+
+/* TIME SLOT EDITOR */
+.time-slots-list{display:flex;flex-direction:column;gap:6px;}
+.time-slot-row{display:flex;align-items:center;gap:8px;background:var(--sf2);border:1px solid var(--bd);border-radius:8px;padding:8px 12px;}
+.time-slot-row input{background:var(--bg);border:1px solid var(--bd);border-radius:5px;padding:5px 8px;color:var(--txt);font-family:'DM Mono',monospace;font-size:12px;width:80px;outline:none;}
+.time-slot-row input:focus{border-color:var(--ac);}
+.time-slot-row .ts-label{font-family:'Syne',sans-serif;font-size:11px;font-weight:700;color:var(--mu);flex:1;}
+.ts-del{background:rgba(247,95,95,.15);border:1px solid rgba(247,95,95,.3);border-radius:5px;color:var(--danger);font-size:10px;padding:3px 8px;cursor:pointer;font-family:'Syne',sans-serif;font-weight:700;}
+.ts-del:hover{background:rgba(247,95,95,.25);}
+
+/* CARD / TABLE */
+.card{background:var(--sf);border:1px solid var(--bd);border-radius:13px;padding:18px;}
+.card-title{font-family:'Syne',sans-serif;font-size:14px;font-weight:800;margin-bottom:14px;}
+.dtbl{width:100%;border-collapse:collapse;font-size:12px;}
+.dtbl th{font-family:'Syne',sans-serif;font-size:10px;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:.8px;text-align:left;padding:9px 12px;border-bottom:1px solid var(--bd);}
+.dtbl td{padding:9px 12px;border-bottom:1px solid rgba(37,44,61,.5);vertical-align:middle;}
+.dtbl tr:last-child td{border-bottom:none;}
+.dtbl tr:hover td{background:rgba(255,255,255,.015);}
+.tag{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:600;font-family:'Syne',sans-serif;}
+.t-clash{background:rgba(247,95,95,.15);color:var(--danger);border:1px solid rgba(247,95,95,.3);}
+.t-ok{background:rgba(79,209,142,.1);color:var(--ok);border:1px solid rgba(79,209,142,.25);}
+.t-blue{background:rgba(79,142,247,.1);color:var(--ac);border:1px solid rgba(79,142,247,.25);}
+.t-purple{background:rgba(124,92,252,.1);color:var(--ac2);border:1px solid rgba(124,92,252,.25);}
+.t-merge{background:rgba(168,85,247,.1);color:var(--merge);border:1px solid rgba(168,85,247,.3);}
+.t-warn{background:rgba(247,162,79,.1);color:var(--warn);border:1px solid rgba(247,162,79,.3);}
+
+/* FORMS */
+.fg{display:flex;flex-direction:column;gap:5px;margin-bottom:11px;}
+.fg label{font-family:'Syne',sans-serif;font-size:10px;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:.5px;}
+.fg input,.fg select,.fg textarea{background:var(--sf2);border:1px solid var(--bd);border-radius:7px;padding:8px 11px;color:var(--txt);font-family:'DM Mono',monospace;font-size:12px;outline:none;transition:border-color .18s;width:100%;}
+.fg input:focus,.fg select:focus,.fg textarea:focus{border-color:var(--ac);}
+select option{background:var(--sf2);}
+.fgrow{display:grid;grid-template-columns:1fr 1fr;gap:11px;}
+.fgrow .fg{margin-bottom:0;}
+.fgrow3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:11px;}
+.fgrow3 .fg{margin-bottom:0;}
+.btn{padding:8px 17px;border-radius:7px;font-family:'Syne',sans-serif;font-size:12px;font-weight:700;cursor:pointer;border:none;transition:all .17s;}
+.btn-primary{background:var(--ac);color:#fff;}
+.btn-primary:hover{background:#6aa0ff;transform:translateY(-1px);}
+.btn-success{background:rgba(79,209,142,.15);color:var(--ok);border:1px solid rgba(79,209,142,.3);}
+.btn-success:hover{background:rgba(79,209,142,.25);}
+.btn-ghost{background:transparent;border:1px solid var(--bd);color:var(--mu);}
+.btn-ghost:hover{border-color:var(--ac);color:var(--ac);}
+.btn-danger{background:rgba(247,95,95,.12);border:1px solid rgba(247,95,95,.35);color:var(--danger);}
+.btn-danger:hover{background:rgba(247,95,95,.22);}
+.btn-warn{background:rgba(247,162,79,.12);border:1px solid rgba(247,162,79,.35);color:var(--warn);}
+.btn-warn:hover{background:rgba(247,162,79,.22);}
+.btn-merge{background:rgba(168,85,247,.12);border:1px solid rgba(168,85,247,.35);color:var(--merge);}
+.btn-merge:hover{background:rgba(168,85,247,.22);}
+.btn-sm{padding:4px 10px;font-size:10px;}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap;}
+.err-msg{display:none;color:var(--danger);font-size:11px;margin-top:8px;padding:8px 11px;background:rgba(247,95,95,.07);border:1px solid rgba(247,95,95,.22);border-radius:7px;}
+.ok-msg{display:none;color:var(--ok);font-size:11px;margin-top:8px;padding:8px 11px;background:rgba(79,209,142,.07);border:1px solid rgba(79,209,142,.22);border-radius:7px;}
+
+/* SECTION CHECKBOXES */
+.sec-checks{display:flex;flex-wrap:wrap;gap:7px;padding:10px;background:var(--sf2);border:1px solid var(--bd);border-radius:8px;}
+.sec-check-item{display:flex;align-items:center;gap:5px;cursor:pointer;padding:4px 10px;border-radius:6px;border:1px solid var(--bd);background:var(--sf);transition:all .15s;}
+.sec-check-item:hover{border-color:var(--merge);}
+.sec-check-item.selected{border-color:var(--merge);background:rgba(168,85,247,.1);color:var(--merge);}
+.sec-check-item input[type=checkbox]{accent-color:var(--merge);width:13px;height:13px;}
+.sec-check-label{font-family:'Syne',sans-serif;font-size:11px;font-weight:700;}
+
+/* STRENGTH INDICATOR */
+.strength-bar{height:4px;border-radius:2px;background:var(--bd);overflow:hidden;margin-top:4px;}
+.strength-fill{height:100%;border-radius:2px;transition:width .3s;}
+
+/* UPLOAD */
+.upload-zone{border:2px dashed var(--bd);border-radius:12px;padding:36px 20px;text-align:center;cursor:pointer;transition:all .2s;background:var(--sf2);margin-bottom:16px;}
+.upload-zone:hover,.upload-zone.drag{border-color:var(--ac);background:rgba(79,142,247,.05);}
+.upload-zone .uico{font-size:36px;margin-bottom:10px;}
+.upload-zone .utitle{font-family:'Syne',sans-serif;font-size:14px;font-weight:800;margin-bottom:5px;}
+.upload-zone .usub{color:var(--mu);font-size:12px;}
+#xl-input{display:none;}
+.preview-table-wrap{overflow-x:auto;max-height:300px;overflow-y:auto;margin-bottom:12px;}
+.preview-table{width:100%;border-collapse:collapse;font-size:11px;}
+.preview-table th{background:var(--sf2);font-family:'Syne',sans-serif;font-size:9px;color:var(--mu);text-transform:uppercase;letter-spacing:.8px;padding:7px 10px;border-bottom:1px solid var(--bd);position:sticky;top:0;}
+.preview-table td{padding:6px 10px;border-bottom:1px solid rgba(37,44,61,.4);}
+.preview-table tr.row-bad{background:rgba(247,95,95,.05);}
+.import-summary{background:var(--sf2);border-radius:9px;padding:12px 14px;margin-bottom:12px;display:flex;gap:18px;flex-wrap:wrap;}
+.is-item{font-size:12px;}
+.is-num{font-family:'Syne',sans-serif;font-size:18px;font-weight:800;}
+
+/* FACULTY CARDS */
+.fac-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px;}
+.fac-card{background:var(--sf);border:1px solid var(--bd);border-radius:11px;padding:13px;}
+.fc-name{font-family:'Syne',sans-serif;font-size:13px;font-weight:800;margin-bottom:1px;}
+.fc-sub{font-size:10px;color:var(--mu);margin-bottom:8px;}
+.fc-row{display:flex;align-items:center;gap:6px;padding:3px 0;border-bottom:1px solid rgba(37,44,61,.35);font-size:10px;}
+.fc-row:last-child{border-bottom:none;}
+.fc-day{color:var(--ac);font-weight:500;min-width:82px;}
+.fc-clash{color:var(--danger)!important;}
+
+/* MODAL */
+.mb{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:2000;backdrop-filter:blur(5px);align-items:center;justify-content:center;}
+.mb.open{display:flex;}
+.modal{background:var(--sf);border:1px solid var(--bd);border-radius:16px;padding:22px;max-width:520px;width:94%;position:relative;animation:popIn .24s cubic-bezier(.34,1.56,.64,1);max-height:92vh;overflow-y:auto;}
+.modal-wide{max-width:680px;}
+@keyframes popIn{from{transform:scale(.87) translateY(14px);opacity:0;}to{transform:scale(1) translateY(0);opacity:1;}}
+.mc{position:absolute;top:12px;right:12px;background:var(--sf2);border:1px solid var(--bd);border-radius:6px;width:26px;height:26px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--mu);font-size:13px;}
+.mc:hover{color:var(--txt);}
+.mico{width:42px;height:42px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:19px;margin-bottom:10px;}
+.mi-g{background:rgba(79,209,142,.1);border:1px solid rgba(79,209,142,.28);}
+.mi-r{background:rgba(247,95,95,.1);border:1px solid rgba(247,95,95,.28);}
+.mi-b{background:rgba(79,142,247,.1);border:1px solid rgba(79,142,247,.28);}
+.mi-m{background:rgba(168,85,247,.1);border:1px solid rgba(168,85,247,.28);}
+.mtitle{font-family:'Syne',sans-serif;font-size:16px;font-weight:800;margin-bottom:6px;}
+.mbody{color:var(--mu);font-size:12px;line-height:1.6;margin-bottom:12px;}
+.mbody strong{color:var(--txt);}
+.mmeta{background:var(--sf2);border-radius:8px;padding:10px;margin-bottom:12px;}
+.mr{display:flex;justify-content:space-between;font-size:11px;padding:2px 0;}
+.mk{color:var(--mu);}
+.mv{color:var(--txt);font-weight:500;}
+.macts{display:flex;gap:8px;flex-wrap:wrap;}
+.mdiv{height:1px;background:var(--bd);margin:12px 0;}
+
+/* RF */
+.rf-ctrl{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;align-items:flex-end;}
+.rf-ctrl .fg{flex:1;min-width:120px;margin-bottom:0;}
+.rgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;}
+.rc{background:var(--sf2);border:1px solid var(--bd);border-radius:10px;padding:12px;transition:all .16s;}
+.rc.free{border-color:rgba(79,209,142,.38);background:rgba(79,209,142,.04);cursor:pointer;}
+.rc.free:hover{transform:translateY(-2px);}
+.rc.occ{border-color:rgba(247,95,95,.32);background:rgba(247,95,95,.04);cursor:pointer;}
+.rc-n{font-family:'Syne',sans-serif;font-size:15px;font-weight:800;}
+.rc-s{font-size:10px;display:flex;align-items:center;gap:4px;margin-top:3px;}
+.dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+.dg{background:var(--ok);box-shadow:0 0 5px var(--ok);}
+.dr{background:var(--danger);box-shadow:0 0 5px var(--danger);}
+.rc-i{font-size:10px;color:var(--mu);margin-top:4px;line-height:1.4;}
+
+/* INFO BOXES */
+.info-box{background:rgba(79,142,247,.06);border:1px solid rgba(79,142,247,.2);border-radius:8px;padding:10px 12px;font-size:11px;color:var(--mu);margin-bottom:12px;line-height:1.6;}
+.info-box.merge-info{background:rgba(168,85,247,.06);border-color:rgba(168,85,247,.2);}
+.info-box strong{color:var(--txt);}
+
+/* SUGGESTION CARDS */
+.sugg-card{background:var(--sf2);border:1px solid rgba(79,209,142,.25);border-radius:10px;padding:12px 14px;display:flex;align-items:flex-start;gap:12px;transition:all .18s;}
+.sugg-card:hover{border-color:rgba(79,209,142,.55);background:rgba(79,209,142,.04);transform:translateX(2px);}
+.sugg-card.sugg-warn{border-color:rgba(247,162,79,.25);}
+.sugg-card.sugg-warn:hover{border-color:rgba(247,162,79,.55);background:rgba(247,162,79,.04);}
+.sugg-icon{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;background:rgba(79,209,142,.1);border:1px solid rgba(79,209,142,.25);}
+.sugg-icon.si-warn{background:rgba(247,162,79,.1);border-color:rgba(247,162,79,.25);}
+.sugg-body{flex:1;min-width:0;}
+.sugg-title{font-family:'Syne',sans-serif;font-size:12px;font-weight:800;color:var(--txt);margin-bottom:3px;}
+.sugg-desc{font-size:10px;color:var(--mu);line-height:1.5;}
+.sugg-tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px;}
+.sugg-act{flex-shrink:0;}
+.clash-sugg-item{background:rgba(79,209,142,.06);border:1px solid rgba(79,209,142,.22);border-radius:8px;padding:9px 12px;margin-bottom:6px;display:flex;align-items:center;gap:10px;}
+.csi-room{font-family:'Syne',sans-serif;font-weight:800;font-size:14px;color:var(--ok);min-width:55px;}
+.csi-info{flex:1;font-size:11px;color:var(--mu);line-height:1.4;}
+.csi-info strong{color:var(--txt);}
+.sugg-section-title{font-family:'Syne',sans-serif;font-size:11px;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:1px;margin:14px 0 8px;display:flex;align-items:center;gap:6px;}
+.sugg-section-title::after{content:'';flex:1;height:1px;background:var(--bd);}
+.no-clash-banner{background:rgba(79,209,142,.07);border:1px solid rgba(79,209,142,.22);border-radius:11px;padding:20px;text-align:center;}
+.no-clash-banner .ncb-ico{font-size:32px;margin-bottom:8px;}
+.no-clash-banner .ncb-title{font-family:'Syne',sans-serif;font-size:16px;font-weight:800;color:var(--ok);}
+
+::-webkit-scrollbar{width:5px;height:5px;}
+::-webkit-scrollbar-track{background:var(--bg);}
+::-webkit-scrollbar-thumb{background:var(--bd);border-radius:3px;}
+
+/* INFO BANNER shown when filtered */
+.tt-info-banner{display:none;align-items:center;gap:12px;background:var(--sf2);border:1px solid var(--bd);border-radius:10px;padding:10px 16px;margin-bottom:14px;flex-wrap:wrap;}
+.tt-info-banner.visible{display:flex;}
+.tib-icon{font-size:22px;}
+.tib-title{font-family:'Syne',sans-serif;font-size:15px;font-weight:800;color:var(--txt);}
+.tib-sub{font-size:11px;color:var(--mu);}
+.tib-tags{display:flex;gap:6px;flex-wrap:wrap;margin-left:auto;}
+
+/* Download button */
+.btn-dl{background:rgba(79,209,142,.12);border:1px solid rgba(79,209,142,.35);color:var(--ok);padding:7px 14px;border-radius:7px;font-family:'Syne',sans-serif;font-size:11px;font-weight:700;cursor:pointer;transition:all .17s;display:flex;align-items:center;gap:5px;}
+.btn-dl:hover{background:rgba(79,209,142,.22);transform:translateY(-1px);}
+.dl-dropdown{position:relative;display:inline-block;}
+.dl-menu{display:none;position:absolute;right:0;top:110%;background:var(--sf);border:1px solid var(--bd);border-radius:10px;min-width:180px;z-index:500;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,.4);}
+.dl-menu.open{display:block;}
+.dl-item{padding:10px 14px;font-family:'Syne',sans-serif;font-size:12px;font-weight:600;color:var(--mu);cursor:pointer;display:flex;align-items:center;gap:8px;transition:all .15s;}
+.dl-item:hover{background:var(--sf2);color:var(--txt);}
+
+/* PRINT STYLES */
+@media print{
+  body{background:#fff;color:#000;}
+  body::before{display:none;}
+  .sidenav,.header,.hdr-right,.ph-acts,.fbar,.sedit,.sdel,.edit-time-btn,.ahint,
+  button:not(.print-keep){display:none!important;}
+  header{border:none;background:#fff;padding:10px 16px;}
+  .logo{color:#000;font-size:16px;}
+  .logo span{color:#2563eb;}
+  .logo sub{color:#666;}
+  .layout{display:block;}
+  .main{padding:0;overflow:visible;max-height:none;}
+  .pg{display:none!important;}
+  .pg.show,.pg.print-active{display:block!important;}
+  .tt-wrap,.tt{overflow:visible!important;min-width:unset!important;}
+  .tt{border:1px solid #ddd;border-radius:0;}
+  .tt-head{background:#f0f4ff!important;}
+  .tt-hc{color:#333!important;font-size:10px;}
+  .tt-time-cell{background:#f9f9f9!important;color:#555!important;font-size:9px;}
+  .tt-cell{background:#fff!important;min-height:40px;}
+  .slot{min-height:36px;padding:3px 5px;}
+  .s-ok{background:#dbeafe!important;border:1px solid #93c5fd!important;}
+  .s-clash{background:#fee2e2!important;border:1px solid #f87171!important;}
+  .s-merged{background:#ede9fe!important;border:1px solid #a78bfa!important;}
+  .s-subj{font-size:9px;color:#1e3a8a!important;}
+  .s-meta{font-size:8px;color:#555!important;}
+  .print-header{display:block!important;}
+  .stats{display:none!important;}
+  .card{border:1px solid #ddd;border-radius:4px;}
+  .dtbl th{background:#f0f4ff!important;color:#333!important;}
+  .dtbl td{color:#000!important;border-bottom:1px solid #eee!important;}
+  .tag{border:1px solid #ccc!important;}
+  .sc{background:#f9f9f9!important;border:1px solid #ddd!important;}
+  .scv{color:#000!important;}
+  @page{margin:12mm;size:A4 landscape;}
+}
+.print-header{display:none;}</style>
+
+</head>
+<body>
+
+<header>
+  <div style="display:flex;flex-direction:column;gap:1px;">
+    <div class="logo" style="font-size:15px;letter-spacing:0px;">Dha Suffa University</div>
+    <div style="font-family:'Syne',sans-serif;font-size:11px;font-weight:600;color:var(--mu);letter-spacing:0.5px;">Smart <span style="color:var(--ac)">Timetable</span> Management System</div>
+  </div>
+  <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+    <div id="hdr-faculty-chip" style="display:none;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:600;font-family:'Syne',sans-serif;background:rgba(124,92,252,.15);color:var(--ac2);border:1px solid rgba(124,92,252,.3)"></div>
+    <div id="hdr-section-chip" style="display:none;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:600;font-family:'Syne',sans-serif;background:rgba(168,85,247,.15);color:var(--merge);border:1px solid rgba(168,85,247,.3)"></div>
+    <div id="hdr-room-chip" style="display:none;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:600;font-family:'Syne',sans-serif;background:rgba(79,142,247,.15);color:var(--ac);border:1px solid rgba(79,142,247,.3)"></div>
+  </div>
+  <div class="hdr-right">
+    <div id="hdr-clash" class="c-ok">✓ No Clashes</div>
+  </div>
+</header>
+
+<div class="layout">
+<nav class="sidenav">
+  <div class="nl">Views</div>
+  <div class="ni active" id="nav-timetable" onclick="goTo('timetable')"><span class="ic">🗓</span>Week Timetable</div>
+  <div class="ni" id="nav-section-tt" onclick="goTo('section-tt')"><span class="ic">🏷</span>Section-wise</div>
+  <div class="ni" id="nav-faculty-tt" onclick="goTo('faculty-tt')"><span class="ic">👤</span>Faculty-wise</div>
+  <div class="ni" id="nav-room-finder" onclick="goTo('room-finder')"><span class="ic">🔍</span>Room Finder</div>
+
+  <div class="ndiv"></div>
+  <div class="nl">Schedule</div>
+  <div class="ni" id="nav-add-class" onclick="goTo('add-class')"><span class="ic">➕</span>Add Class</div>
+  <div class="ni" id="nav-merge" onclick="goTo('merge')"><span class="ic">🔀</span>Merge Classes</div>
+  <div class="ni" id="nav-import" onclick="goTo('import')"><span class="ic">📥</span>Import Excel</div>
+  <div class="ni" id="nav-classes" onclick="goTo('classes')"><span class="ic">📋</span>All Classes</div>
+
+  <div class="ndiv"></div>
+  <div class="nl">Tools</div>
+  <div class="ni" id="nav-suggestions" onclick="goTo('suggestions')"><span class="ic">💡</span>Suggestions</div>
+  <div class="ndiv"></div>
+  <div class="nl">Manage</div>
+  <div class="ni" id="nav-time-slots" onclick="goTo('time-slots')"><span class="ic">⏱</span>Time Slots</div>
+  <div class="ni" id="nav-sections" onclick="goTo('sections')"><span class="ic">🏷</span>Sections</div>
+  <div class="ni" id="nav-courses" onclick="goTo('courses')"><span class="ic">📚</span>Courses</div>
+  <div class="ni" id="nav-faculty" onclick="goTo('faculty')"><span class="ic">👩‍🏫</span>Faculty</div>
+  <div class="ni" id="nav-rooms-mgmt" onclick="goTo('rooms-mgmt')"><span class="ic">🚪</span>Rooms</div>
+  <div class="ndiv"></div>
+  <div class="nl">Data</div>
+  <div class="ni" id="nav-data-mgmt" onclick="goTo('data-mgmt')"><span class="ic">💾</span>Data Manager</div>
+
+  <div class="cp">
+    <div class="cp-ttl">⚡ Clashes</div>
+    <div id="cp-body"><div class="cp-ok">● No clashes</div></div>
+  </div>
+</nav>
+
+<main class="main">
+
+<!-- ======= WEEK TIMETABLE ======= -->
+<div class="pg show" id="page-timetable">
+  <div class="ph">
+    <div class="pht">Week <span>Timetable</span></div>
+    <div class="ph-acts">
+      <button class="btn btn-ghost btn-sm" onclick="goTo('time-slots')">⏱ Edit Timings</button>
+      <button class="btn btn-merge btn-sm" onclick="goTo('merge')">🔀 Merge</button>
+      <div class="dl-dropdown" id="dl-drop-week">
+        <button class="btn-dl" onclick="toggleDL('dl-drop-week')">⬇ Download ▾</button>
+        <div class="dl-menu" id="dl-menu-week">
+          <div class="dl-item" onclick="printTT('week')">🖨 Print / Save PDF</div>
+          <div class="dl-item" onclick="exportExcel('week')">📊 Export Excel (.xlsx)</div>
+          <div class="dl-item" onclick="exportCSV('week')">📄 Export CSV</div>
+        </div>
+      </div>
+      <button class="btn btn-primary btn-sm" onclick="goTo('add-class')">+ Add Class</button>
+    </div>
+  </div>
+  <!-- Info banner shown when filtered -->
+  <div class="tt-info-banner" id="tt-week-banner">
+    <div class="tib-icon" id="tt-week-banner-ico">🗓</div>
+    <div><div class="tib-title" id="tt-week-banner-title"></div><div class="tib-sub" id="tt-week-banner-sub"></div></div>
+    <div class="tib-tags" id="tt-week-banner-tags"></div>
+  </div>
+  <div class="stats">
+    <div class="sc"><div class="scv" id="sv-c" style="color:var(--ac)">0</div><div class="scl">Classes</div></div>
+    <div class="sc"><div class="scv" id="sv-cl" style="color:var(--danger)">0</div><div class="scl">Clashes</div></div>
+    <div class="sc"><div class="scv" id="sv-s" style="color:var(--ok)">0</div><div class="scl">Sections</div></div>
+    <div class="sc"><div class="scv" id="sv-str" style="color:var(--warn)">0</div><div class="scl">Total Students</div></div>
+    <div class="sc"><div class="scv" id="sv-mg" style="color:var(--merge)">0</div><div class="scl">Merged</div></div>
+  </div>
+  <div class="fbar">
+    <span class="fbar-label">Filter:</span>
+    <select id="tt-ftype" onchange="applyTTFilter()">
+      <option value="all">All Classes</option>
+      <option value="section">By Section</option>
+      <option value="faculty">By Faculty</option>
+      <option value="room">By Room</option>
+    </select>
+    <select id="tt-fval" onchange="applyTTFilter()" style="display:none"></select>
+    <label style="display:flex;align-items:center;gap:5px;font-family:'Syne',sans-serif;font-size:11px;color:var(--mu);cursor:pointer;margin-left:auto;">
+      <input type="checkbox" id="tt-show-strength" onchange="applyTTFilter()" style="accent-color:var(--ac)"> Show Strength
+    </label>
+  </div>
+  <div class="tt-wrap"><div class="tt" id="tt-grid"></div></div>
+</div>
+
+<!-- ======= SECTION-WISE TT ======= -->
+<div class="pg" id="page-section-tt">
+  <div class="ph">
+    <div class="pht">Section-wise <span>Timetable</span></div>
+    <div class="ph-acts">
+      <select id="sec-pick" onchange="renderSectionTT()" class="btn btn-ghost" style="cursor:pointer;padding:7px 11px;"></select>
+      <div class="dl-dropdown" id="dl-drop-sec">
+        <button class="btn-dl" onclick="toggleDL('dl-drop-sec')">⬇ Download ▾</button>
+        <div class="dl-menu" id="dl-menu-sec">
+          <div class="dl-item" onclick="printTT('section')">🖨 Print / Save PDF</div>
+          <div class="dl-item" onclick="exportExcel('section')">📊 Export Excel</div>
+          <div class="dl-item" onclick="exportCSV('section')">📄 Export CSV</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- Info banner -->
+  <div class="tt-info-banner visible" id="tt-sec-banner">
+    <div class="tib-icon">🏷</div>
+    <div><div class="tib-title" id="tt-sec-banner-title">Section</div><div class="tib-sub" id="tt-sec-banner-sub"></div></div>
+    <div class="tib-tags" id="tt-sec-banner-tags"></div>
+  </div>
+  <div class="fbar">
+    <span class="fbar-label">View:</span>
+    <div class="view-btns">
+      <div class="vbtn active" id="sv-btn-single" onclick="setSView('single')">Single</div>
+      <div class="vbtn" id="sv-btn-all" onclick="setSView('all')">All Sections</div>
+    </div>
+  </div>
+  <div id="section-tt-con"></div>
+</div>
+
+<!-- ======= FACULTY-WISE TT ======= -->
+<div class="pg" id="page-faculty-tt">
+  <div class="ph">
+    <div class="pht">Faculty-wise <span>Timetable</span></div>
+    <div class="ph-acts">
+      <select id="fac-pick" onchange="renderFacultyTT()" class="btn btn-ghost" style="cursor:pointer;padding:7px 11px;"></select>
+      <div class="dl-dropdown" id="dl-drop-fac">
+        <button class="btn-dl" onclick="toggleDL('dl-drop-fac')">⬇ Download ▾</button>
+        <div class="dl-menu" id="dl-menu-fac">
+          <div class="dl-item" onclick="printTT('faculty')">🖨 Print / Save PDF</div>
+          <div class="dl-item" onclick="exportExcel('faculty')">📊 Export Excel</div>
+          <div class="dl-item" onclick="exportCSV('faculty')">📄 Export CSV</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- Info banner -->
+  <div class="tt-info-banner visible" id="tt-fac-banner">
+    <div class="tib-icon">👤</div>
+    <div><div class="tib-title" id="tt-fac-banner-title">Faculty</div><div class="tib-sub" id="tt-fac-banner-sub"></div></div>
+    <div class="tib-tags" id="tt-fac-banner-tags"></div>
+  </div>
+  <div class="fbar">
+    <span class="fbar-label">View:</span>
+    <div class="view-btns">
+      <div class="vbtn active" id="fv-btn-single" onclick="setFView('single')">Single</div>
+      <div class="vbtn" id="fv-btn-cards" onclick="setFView('cards')">All Cards</div>
+    </div>
+  </div>
+  <div id="faculty-tt-con"></div>
+</div>
+
+<!-- ======= ROOM FINDER ======= -->
+<div class="pg" id="page-room-finder">
+  <div class="ph">
+    <div class="pht">Room <span>Finder</span></div>
+    <div class="ph-acts">
+      <div class="dl-dropdown" id="dl-drop-room">
+        <button class="btn-dl" onclick="toggleDL('dl-drop-room')">⬇ Download ▾</button>
+        <div class="dl-menu" id="dl-menu-room">
+          <div class="dl-item" onclick="printTT('room')">🖨 Print / Save PDF</div>
+          <div class="dl-item" onclick="exportExcel('room')">📊 Export Excel</div>
+          <div class="dl-item" onclick="exportCSV('room')">📄 Export CSV</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">Check Room Availability</div>
+    <div class="rf-ctrl">
+      <div class="fg"><label>Day</label>
+        <select id="rf-day" onchange="renderRF()">
+          <option>Mon</option><option>Tue</option><option>Wed</option>
+          <option>Thu</option><option>Fri</option><option>Sat</option><option>Sun</option>
+        </select>
+      </div>
+      <div class="fg"><label>Time Slot</label><select id="rf-time" onchange="renderRF()"></select></div>
+    </div>
+    <div class="rgrid" id="rf-grid"></div>
+  </div>
+</div>
+
+<!-- ======= ADD CLASS ======= -->
+<div class="pg" id="page-add-class">
+  <div class="ph"><div class="pht">Add <span>Class</span></div></div>
+  <div class="card" style="max-width:680px">
+    <div class="card-title">Schedule a New Class</div>
+    <div class="fgrow">
+      <div class="fg"><label>Course *</label><select id="ac-course"><option value="">-- Course --</option></select></div>
+      <div class="fg"><label>Faculty *</label><select id="ac-faculty"><option value="">-- Faculty --</option></select></div>
+    </div>
+    <div class="fgrow">
+      <div class="fg"><label>Room *</label><select id="ac-room"><option value="">-- Room --</option></select></div>
+      <div class="fg"><label>Section *</label>
+        <select id="ac-sec" onchange="secSelectChange()"><option value="">-- Section --</option><option value="__new__">+ New Section</option></select>
+      </div>
+    </div>
+    <div id="new-sec-row" style="display:none">
+      <div class="fgrow">
+        <div class="fg"><label>New Section Name *</label><input id="ac-new-sec" placeholder="e.g. CS-C"></div>
+        <div class="fg"><label>Department</label><input id="ac-new-dept" placeholder="Computer Science"></div>
+      </div>
+    </div>
+    <div class="fgrow3">
+      <div class="fg"><label>Day *</label>
+        <select id="ac-day">
+          <option value="">-- Day --</option>
+          <option>Mon</option><option>Tue</option><option>Wed</option>
+          <option>Thu</option><option>Fri</option><option>Sat</option><option>Sun</option>
+        </select>
+      </div>
+      <div class="fg"><label>Start Time *</label><select id="ac-start"><option value="">-- Start --</option></select></div>
+      <div class="fg"><label>End Time *</label><select id="ac-end"><option value="">-- End --</option></select></div>
+    </div>
+    <div class="fgrow">
+      <div class="fg"><label>Student Strength</label><input type="number" id="ac-strength" placeholder="e.g. 60" min="1" max="500"></div>
+      <div class="fg"><label>Batch/Group (optional)</label><input id="ac-batch" placeholder="e.g. Batch A"></div>
+    </div>
+    <div class="err-msg" id="ac-err"></div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="submitAC()">Add to Timetable</button>
+      <button class="btn btn-ghost" onclick="clearAC()">Clear</button>
+    </div>
+  </div>
+</div>
+
+<!-- ======= MERGE CLASSES ======= -->
+<div class="pg" id="page-merge">
+  <div class="ph">
+    <div class="pht">Merge <span>Classes</span></div>
+  </div>
+  <div class="info-box merge-info" style="margin-bottom:16px;">
+    <strong>🔀 What is a Merged Class?</strong><br>
+    A merged class combines multiple sections into a single slot (e.g., CS-A + CS-B attend the same lecture together in Hall-1). The system will show a single slot with all sections listed and calculate combined student strength automatically.
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;flex-wrap:wrap;">
+    <div class="card">
+      <div class="card-title">Create Merged Class</div>
+      <div class="fg"><label>Course *</label><select id="mg-course"><option value="">-- Course --</option></select></div>
+      <div class="fg"><label>Faculty *</label><select id="mg-faculty"><option value="">-- Faculty --</option></select></div>
+      <div class="fg"><label>Room *</label><select id="mg-room"><option value="">-- Room --</option></select></div>
+      <div class="fg"><label>Sections to Merge * (select multiple)</label>
+        <div class="sec-checks" id="mg-sec-checks"></div>
+      </div>
+      <div class="fgrow">
+        <div class="fg"><label>Day *</label>
+          <select id="mg-day">
+            <option value="">-- Day --</option>
+            <option>Mon</option><option>Tue</option><option>Wed</option>
+            <option>Thu</option><option>Fri</option><option>Sat</option><option>Sun</option>
+          </select>
+        </div>
+        <div class="fg"><label>Start *</label><select id="mg-start"><option value="">--</option></select></div>
+      </div>
+      <div class="fg"><label>End *</label><select id="mg-end"><option value="">--</option></select></div>
+      <div class="fg"><label>Combined Strength (auto-calculated or override)</label>
+        <input type="number" id="mg-strength" placeholder="auto from sections"></div>
+      <div class="err-msg" id="mg-err"></div>
+      <div class="btn-row">
+        <button class="btn btn-merge" onclick="submitMerge()">🔀 Create Merged Class</button>
+        <button class="btn btn-ghost" onclick="clearMerge()">Clear</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Existing Merged Classes</div>
+      <div id="merged-list">
+        <div style="color:var(--mu);font-size:12px;text-align:center;padding:30px">No merged classes yet.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ======= TIME SLOTS ======= -->
+<div class="pg" id="page-time-slots">
+  <div class="ph">
+    <div class="pht">Edit <span>Time Slots</span></div>
+    <div class="ph-acts">
+      <button class="btn btn-success" onclick="addTimeSlot()">+ Add Slot</button>
+      <button class="btn btn-primary" onclick="applyTimeSlots()">✓ Apply Changes</button>
+    </div>
+  </div>
+  <div class="info-box" style="margin-bottom:16px">
+    <strong>⏱ Editable Time Slots</strong> — Add, remove, or change time slots. Changes apply to the timetable immediately. Time slots used by scheduled classes cannot be deleted.
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;">
+    <div class="card">
+      <div class="card-title">Current Time Slots</div>
+      <div class="time-slots-list" id="time-slots-list"></div>
+      <div style="margin-top:12px;display:flex;gap:8px;">
+        <button class="btn btn-ghost btn-sm" onclick="resetTimeSlotsDefault()">Reset to Default</button>
+        <button class="btn btn-ghost btn-sm" onclick="addTimeSlot()">+ Add Slot</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Quick Presets</div>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <button class="btn btn-ghost" onclick="applyPreset('standard')">📅 Standard (8AM–6PM, 1hr)</button>
+        <button class="btn btn-ghost" onclick="applyPreset('college')">🎓 College (8AM–5PM, 1hr)</button>
+        <button class="btn btn-ghost" onclick="applyPreset('morning')">🌅 Morning Only (7AM–1PM)</button>
+        <button class="btn btn-ghost" onclick="applyPreset('split')">⚡ Split (9–1, 2–5 with break)</button>
+        <button class="btn btn-ghost" onclick="applyPreset('halves')">⏰ 90-min Slots</button>
+      </div>
+      <div class="mdiv"></div>
+      <div style="font-family:'Syne',sans-serif;font-size:11px;font-weight:700;color:var(--mu);margin-bottom:8px;">QUICK ADD</div>
+      <div class="fgrow">
+        <div class="fg"><label>Start</label><input type="time" id="qa-start" value="08:00"></div>
+        <div class="fg"><label>End</label><input type="time" id="qa-end" value="09:00"></div>
+      </div>
+      <button class="btn btn-success btn-sm" onclick="quickAddSlot()">+ Add This Slot</button>
+    </div>
+  </div>
+</div>
+
+<!-- ======= IMPORT ======= -->
+<div class="pg" id="page-import">
+  <div class="ph">
+    <div class="pht">Import <span>Excel</span></div>
+    <div class="ph-acts"><a href="#" id="dl-template" class="btn btn-ghost btn-sm">⬇ Download Template</a></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Upload Schedule from Excel / CSV</div>
+    <div class="upload-zone" id="upload-zone" onclick="document.getElementById('xl-input').click()">
+      <input type="file" id="xl-input" accept=".xlsx,.xls,.csv" onchange="handleXL(event)">
+      <div class="uico">📊</div>
+      <div class="utitle">Drop your Excel file here</div>
+      <div class="usub">Supports .xlsx, .xls, .csv · Click to browse</div>
+    </div>
+    <div id="xl-preview" style="display:none">
+      <div class="import-summary" id="xl-summary"></div>
+      <div class="card-title" style="font-size:13px">Preview (first 20 rows)</div>
+      <div class="preview-table-wrap"><table class="preview-table" id="xl-table"></table></div>
+      <div class="err-msg" id="xl-err"></div>
+      <div class="ok-msg" id="xl-ok"></div>
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="doImport()">✓ Import Valid Rows</button>
+        <button class="btn btn-warn" onclick="doImport(true)">⚠ Import & Keep Clashes</button>
+        <button class="btn btn-ghost" onclick="cancelImport()">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ======= ALL CLASSES ======= -->
+<div class="pg" id="page-classes">
+  <div class="ph">
+    <div class="pht">All <span>Classes</span></div>
+    <div class="ph-acts">
+      <select id="cls-sec-filter" onchange="renderClasses()" class="btn btn-ghost" style="padding:6px 11px;cursor:pointer;"><option value="">All Sections</option></select>
+      <button class="btn btn-primary btn-sm" onclick="goTo('add-class')">+ Add</button>
+    </div>
+  </div>
+  <div class="card">
+    <table class="dtbl">
+      <thead><tr><th>Course</th><th>Faculty</th><th>Room</th><th>Section(s)</th><th>Day</th><th>Time</th><th>Strength</th><th>Type</th><th>Status</th><th></th></tr></thead>
+      <tbody id="tb-classes"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ======= SECTIONS ======= -->
+<div class="pg" id="page-sections">
+  <div class="ph">
+    <div class="pht">Manage <span>Sections</span></div>
+    <button class="btn btn-success" onclick="openM('m-section')">+ New Section</button>
+  </div>
+  <div class="card">
+    <table class="dtbl">
+      <thead><tr><th>Section</th><th>Department</th><th>Strength</th><th>Classes/Wk</th><th>Clashes</th><th>Action</th></tr></thead>
+      <tbody id="tb-sections"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ======= COURSES ======= -->
+<div class="pg" id="page-courses">
+  <div class="ph">
+    <div class="pht">Manage <span>Courses</span></div>
+    <button class="btn btn-success" onclick="openM('m-course')">+ New Course</button>
+  </div>
+  <div class="card">
+    <table class="dtbl">
+      <thead><tr><th>Code</th><th>Course Name</th><th>Credits</th><th>Dept</th><th>Classes</th><th>Action</th></tr></thead>
+      <tbody id="tb-courses"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ======= FACULTY ======= -->
+<div class="pg" id="page-faculty">
+  <div class="ph">
+    <div class="pht">Manage <span>Faculty</span></div>
+    <button class="btn btn-success" onclick="openM('m-faculty')">+ New Faculty</button>
+  </div>
+  <div class="card" style="margin-bottom:14px">
+    <table class="dtbl">
+      <thead><tr><th>Name</th><th>Dept</th><th>Email</th><th>Classes/Wk</th><th>Clashes</th><th>Action</th></tr></thead>
+      <tbody id="tb-faculty"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ======= ROOMS ======= -->
+<div class="pg" id="page-rooms-mgmt">
+  <div class="ph">
+    <div class="pht">Manage <span>Rooms</span></div>
+    <button class="btn btn-success" onclick="openM('m-room')">+ New Room</button>
+  </div>
+  <div class="card">
+    <table class="dtbl">
+      <thead><tr><th>Room ID</th><th>Type</th><th>Capacity</th><th>Classes/Wk</th><th>Capacity Warning</th><th>Action</th></tr></thead>
+      <tbody id="tb-rooms"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ======= SUGGESTIONS ======= -->
+<div class="pg" id="page-suggestions">
+  <div class="ph">
+    <div class="pht">Smart <span>Suggestions</span></div>
+    <div class="ph-acts">
+      <button class="btn btn-ghost btn-sm" onclick="renderSuggestions()">🔄 Refresh</button>
+    </div>
+  </div>
+  <div id="sugg-content"></div>
+</div>
+
+<!-- ======= DATA MANAGER ======= -->
+<div class="pg" id="page-data-mgmt">
+  <div class="ph">
+    <div class="pht">Data <span>Manager</span></div>
+  </div>
+
+  <!-- TOP ROW: Status + Summary -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px;">
+    <div class="card">
+      <div class="card-title">💾 Auto-Save Status</div>
+      <div id="dm-save-status" style="font-size:12px;color:var(--mu);line-height:1.9;"></div>
+      <div class="btn-row" style="margin-top:12px;">
+        <button class="btn btn-success btn-sm" onclick="saveAll();renderDataMgmt();showToast('✓ Saved!','ok')">💾 Save Now</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">📊 Data Summary</div>
+      <div id="dm-summary" style="font-size:12px;line-height:2;"></div>
+    </div>
+  </div>
+
+  <!-- SHARE ACROSS DEVICES — main feature -->
+  <div class="card" style="border-color:rgba(79,142,247,.35);margin-bottom:16px;">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;">
+      <div style="width:38px;height:38px;border-radius:9px;background:rgba(79,142,247,.12);border:1px solid rgba(79,142,247,.3);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">📲</div>
+      <div>
+        <div class="card-title" style="margin-bottom:1px;">Open on Another Device</div>
+        <div style="font-size:11px;color:var(--mu);">Generate a link or QR code that carries all your timetable data — open it on any phone, tablet or computer.</div>
+      </div>
+    </div>
+    <div style="background:rgba(79,142,247,.05);border:1px solid rgba(79,142,247,.18);border-radius:9px;padding:12px;margin:14px 0 14px;font-size:11px;color:var(--mu);line-height:1.7;">
+      <strong style="color:var(--txt);">How it works:</strong> Your entire timetable is compressed and embedded inside a shareable link. Anyone who opens the link gets your exact data loaded automatically — no login, no server, no account needed.
+    </div>
+    <div class="btn-row" style="margin-bottom:14px;">
+      <button class="btn btn-primary" onclick="generateShareLink()">🔗 Generate Share Link</button>
+      <button class="btn btn-ghost btn-sm" onclick="generateQR()">📱 Show QR Code</button>
+    </div>
+    <!-- Share link output -->
+    <div id="share-link-box" style="display:none;">
+      <div style="font-family:'Syne',sans-serif;font-size:10px;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:1px;margin-bottom:7px;">Your Share Link</div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <input id="share-link-input" readonly style="flex:1;background:var(--sf2);border:1px solid var(--bd);border-radius:7px;padding:8px 11px;color:var(--txt);font-family:'DM Mono',monospace;font-size:10px;outline:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" onclick="this.select()">
+        <button class="btn btn-success btn-sm" onclick="copyShareLink()">📋 Copy</button>
+      </div>
+      <div id="share-link-size" style="font-size:10px;color:var(--mu);margin-top:6px;"></div>
+      <div class="ok-msg" id="share-copy-ok" style="margin-top:8px;"></div>
+    </div>
+    <!-- QR code output -->
+    <div id="qr-box" style="display:none;margin-top:14px;">
+      <div style="font-family:'Syne',sans-serif;font-size:10px;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;">Scan with your phone camera</div>
+      <div style="display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap;">
+        <div id="qr-canvas-wrap" style="background:#fff;padding:12px;border-radius:10px;display:inline-block;"></div>
+        <div style="flex:1;min-width:180px;">
+          <div style="font-size:12px;color:var(--mu);line-height:1.8;margin-bottom:10px;">
+            1. Open your phone camera<br>
+            2. Point at the QR code<br>
+            3. Tap the notification to open<br>
+            4. Your timetable loads instantly ✓
+          </div>
+          <button class="btn btn-ghost btn-sm" onclick="downloadQR()">⬇ Download QR Image</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BACKUP & RESTORE -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px;">
+    <div class="card">
+      <div class="card-title">📤 Export Backup</div>
+      <p style="font-size:12px;color:var(--mu);margin-bottom:12px;line-height:1.6;">Download a full JSON backup. Use this to move data between devices manually.</p>
+      <div class="btn-row">
+        <button class="btn btn-primary btn-sm" onclick="exportBackup()">⬇ Download .json</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">📥 Restore Backup</div>
+      <p style="font-size:12px;color:var(--mu);margin-bottom:12px;line-height:1.6;">Upload a <code>.json</code> backup file to restore. <strong style="color:var(--warn)">Overwrites current data.</strong></p>
+      <div class="btn-row">
+        <button class="btn btn-warn btn-sm" onclick="document.getElementById('backup-input').click()">📂 Choose File</button>
+        <input type="file" id="backup-input" accept=".json" style="display:none" onchange="importBackup(event)">
+      </div>
+      <div class="ok-msg" id="restore-ok"></div>
+      <div class="err-msg" id="restore-err"></div>
+    </div>
+  </div>
+
+  <!-- DANGER ZONE -->
+  <div class="card" style="border-color:rgba(247,95,95,.3);">
+    <div class="card-title" style="color:var(--danger)">⚠ Danger Zone</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+      <div style="background:rgba(247,162,79,.06);border:1px solid rgba(247,162,79,.25);border-radius:9px;padding:14px;">
+        <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:12px;margin-bottom:5px;">Reset to Demo Data</div>
+        <div style="font-size:11px;color:var(--mu);margin-bottom:10px;">Restore the original sample timetable.</div>
+        <button class="btn btn-warn btn-sm" onclick="resetToDefault()">↩ Reset to Defaults</button>
+      </div>
+      <div style="background:rgba(247,95,95,.06);border:1px solid rgba(247,95,95,.25);border-radius:9px;padding:14px;">
+        <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:12px;margin-bottom:5px;">Clear All Data</div>
+        <div style="font-size:11px;color:var(--mu);margin-bottom:10px;">Wipe everything. Cannot be undone.</div>
+        <button class="btn btn-danger btn-sm" onclick="clearAllData()">🗑 Clear Everything</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+</main>
+</div>
+
+<!-- ===== MODALS ===== -->
+
+<div class="mb" id="m-section"><div class="modal">
+  <div class="mc" onclick="closeM('m-section')">✕</div>
+  <div class="mico mi-b">🏷</div><div class="mtitle">New Section</div>
+  <div class="fg"><label>Section Name *</label><input id="ns-name" placeholder="e.g. CS-A"></div>
+  <div class="fgrow">
+    <div class="fg"><label>Department</label><input id="ns-dept" placeholder="Computer Science"></div>
+    <div class="fg"><label>Student Strength</label><input type="number" id="ns-strength" placeholder="60" min="1"></div>
+  </div>
+  <div class="err-msg" id="ns-err"></div>
+  <div class="btn-row">
+    <button class="btn btn-primary" onclick="saveSection()">Save</button>
+    <button class="btn btn-ghost" onclick="closeM('m-section')">Cancel</button>
+  </div>
+</div></div>
+
+<div class="mb" id="m-course"><div class="modal">
+  <div class="mc" onclick="closeM('m-course')">✕</div>
+  <div class="mico mi-b">📚</div><div class="mtitle">New Course</div>
+  <div class="fgrow">
+    <div class="fg"><label>Code *</label><input id="nc-code" placeholder="CS301"></div>
+    <div class="fg"><label>Credits</label><input id="nc-credits" type="number" placeholder="3" min="1" max="6"></div>
+  </div>
+  <div class="fg"><label>Course Name *</label><input id="nc-name" placeholder="Data Structures"></div>
+  <div class="fg"><label>Department</label><input id="nc-dept" placeholder="Computer Science"></div>
+  <div class="err-msg" id="nc-err"></div>
+  <div class="btn-row">
+    <button class="btn btn-primary" onclick="saveCourse()">Save</button>
+    <button class="btn btn-ghost" onclick="closeM('m-course')">Cancel</button>
+  </div>
+</div></div>
+
+<div class="mb" id="m-faculty"><div class="modal">
+  <div class="mc" onclick="closeM('m-faculty')">✕</div>
+  <div class="mico mi-b">👤</div><div class="mtitle">New Faculty</div>
+  <div class="fg"><label>Full Name *</label><input id="nf-name" placeholder="Dr. Priya Sharma"></div>
+  <div class="fgrow">
+    <div class="fg"><label>Department</label><input id="nf-dept" placeholder="Computer Science"></div>
+    <div class="fg"><label>Email</label><input id="nf-email" placeholder="faculty@college.edu"></div>
+  </div>
+  <div class="err-msg" id="nf-err"></div>
+  <div class="btn-row">
+    <button class="btn btn-primary" onclick="saveFaculty()">Save</button>
+    <button class="btn btn-ghost" onclick="closeM('m-faculty')">Cancel</button>
+  </div>
+</div></div>
+
+<div class="mb" id="m-room"><div class="modal">
+  <div class="mc" onclick="closeM('m-room')">✕</div>
+  <div class="mico mi-b">🚪</div><div class="mtitle">New Room</div>
+  <div class="fgrow">
+    <div class="fg"><label>Room ID *</label><input id="nr-id" placeholder="R301"></div>
+    <div class="fg"><label>Capacity</label><input id="nr-cap" type="number" placeholder="40"></div>
+  </div>
+  <div class="fg"><label>Type</label>
+    <select id="nr-type"><option>Classroom</option><option>Lab</option><option>Seminar Hall</option><option>Auditorium</option></select>
+  </div>
+  <div class="err-msg" id="nr-err"></div>
+  <div class="btn-row">
+    <button class="btn btn-primary" onclick="saveRoom()">Save</button>
+    <button class="btn btn-ghost" onclick="closeM('m-room')">Cancel</button>
+  </div>
+</div></div>
+
+<!-- Slot detail / edit modal -->
+<div class="mb" id="m-slot"><div class="modal modal-wide">
+  <div class="mc" onclick="closeM('m-slot')">✕</div>
+  <div class="mico" id="ms-ico" style="background:rgba(79,142,247,.1);border:1px solid rgba(79,142,247,.28)">📖</div>
+  <div class="mtitle" id="ms-title">Class Details</div>
+  <div id="ms-view">
+    <div class="mmeta" id="ms-meta"></div>
+    <div class="macts">
+      <button class="btn btn-primary btn-sm" id="ms-edit-btn" onclick="switchToEdit()">✏ Edit</button>
+      <button class="btn btn-danger btn-sm" id="ms-del">Delete</button>
+      <button class="btn btn-ghost btn-sm" onclick="closeM('m-slot')">Close</button>
+    </div>
+  </div>
+  <div id="ms-edit" style="display:none">
+    <div class="fgrow">
+      <div class="fg"><label>Course</label><select id="se-course"></select></div>
+      <div class="fg"><label>Faculty</label><select id="se-faculty"></select></div>
+    </div>
+    <div class="fgrow">
+      <div class="fg"><label>Room</label><select id="se-room"></select></div>
+      <div class="fg"><label>Day</label>
+        <select id="se-day">
+          <option>Mon</option><option>Tue</option><option>Wed</option>
+          <option>Thu</option><option>Fri</option><option>Sat</option><option>Sun</option>
+        </select>
+      </div>
+    </div>
+    <div class="fgrow">
+      <div class="fg"><label>Start</label><select id="se-start"></select></div>
+      <div class="fg"><label>End</label><select id="se-end"></select></div>
+    </div>
+    <div class="fg"><label>Student Strength</label><input type="number" id="se-strength" placeholder="60"></div>
+    <div class="err-msg" id="se-err"></div>
+    <div class="macts" style="margin-top:4px">
+      <button class="btn btn-primary btn-sm" onclick="saveEdit()">✓ Save Changes</button>
+      <button class="btn btn-ghost btn-sm" onclick="switchToView()">Cancel</button>
+    </div>
+  </div>
+</div></div>
+
+<!-- Available popup -->
+<div class="mb" id="m-avail"><div class="modal">
+  <div class="mc" onclick="closeM('m-avail')">✕</div>
+  <div class="mico mi-g">🟢</div>
+  <div class="mtitle" id="mav-t">Slot Available!</div>
+  <div class="mbody" id="mav-b"></div>
+  <div class="mmeta" id="mav-m"></div>
+  <div class="macts">
+    <button class="btn btn-primary" onclick="bookSlot()">📝 Book Slot</button>
+    <button class="btn btn-ghost" onclick="closeM('m-avail')">Dismiss</button>
+  </div>
+</div></div>
+
+<!-- Clash popup with suggestions -->
+<div class="mb" id="m-clash"><div class="modal modal-wide">
+  <div class="mc" onclick="closeM('m-clash')">✕</div>
+  <div class="mico mi-r">⚠️</div>
+  <div class="mtitle">Clash Detected!</div>
+  <div class="mbody" id="mc-b"></div>
+  <div class="mmeta" id="mc-m"></div>
+  <!-- Suggestions block -->
+  <div id="mc-sugg-wrap" style="display:none">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+      <div style="width:36px;height:36px;border-radius:9px;background:rgba(79,209,142,.1);border:1px solid rgba(79,209,142,.28);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">💡</div>
+      <div>
+        <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:13px;color:var(--ok)">Available Rooms — Same Slot</div>
+        <div style="font-size:11px;color:var(--mu)">Move one class to a free room at the same time</div>
+      </div>
+    </div>
+    <div id="mc-sugg-list" style="display:flex;flex-direction:column;gap:7px;max-height:220px;overflow-y:auto;padding-right:4px;"></div>
+  </div>
+  <div id="mc-no-sugg" style="display:none;background:rgba(247,162,79,.07);border:1px solid rgba(247,162,79,.25);border-radius:8px;padding:10px 12px;font-size:11px;color:var(--warn);margin-bottom:12px">
+    ⚠ No free rooms available at this time slot. Consider a different time.
+  </div>
+  <div class="macts" style="margin-top:4px"><button class="btn btn-ghost" onclick="closeM('m-clash')">Close</button></div>
+</div></div>
+
+<!-- Edit time slot inline modal -->
+<div class="mb" id="m-edittime"><div class="modal">
+  <div class="mc" onclick="closeM('m-edittime')">✕</div>
+  <div class="mico mi-b">⏱</div>
+  <div class="mtitle">Edit Time Slot</div>
+  <div class="fgrow">
+    <div class="fg"><label>Start Time</label><input type="time" id="et-start"></div>
+    <div class="fg"><label>End Time</label><input type="time" id="et-end"></div>
+  </div>
+  <div class="err-msg" id="et-err"></div>
+  <div class="btn-row">
+    <button class="btn btn-primary" onclick="saveInlineEdit()">Save</button>
+    <button class="btn btn-ghost" onclick="closeM('m-edittime')">Cancel</button>
+  </div>
+</div></div>
+
+<script>
+// ================================================================
+// DATA
+// ================================================================
+const DAYS=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+
+// ── DEFAULT DATA (used only on first ever load) ──────────────────
+const DEFAULT_TIME_SLOTS=[
+  {start:'08:00',end:'09:00'},{start:'09:00',end:'10:00'},
+  {start:'10:00',end:'11:00'},{start:'11:00',end:'12:00'},
+  {start:'12:00',end:'13:00'},{start:'13:00',end:'14:00'},
+  {start:'14:00',end:'15:00'},{start:'15:00',end:'16:00'},
+  {start:'16:00',end:'17:00'},{start:'17:00',end:'18:00'},
+];
+const DEFAULT_SECTIONS=[
+  {id:'s1',name:'CS-A',dept:'Computer Science',strength:62},
+  {id:'s2',name:'CS-B',dept:'Computer Science',strength:58},
+  {id:'s3',name:'MCA',dept:'MCA',strength:45},
+  {id:'s4',name:'CS-C',dept:'Computer Science',strength:55},
+];
+const DEFAULT_COURSES=[
+  {id:'c1',code:'CS301',name:'Data Structures',credits:4,dept:'Computer Science'},
+  {id:'c2',code:'CS302',name:'Operating Systems',credits:4,dept:'Computer Science'},
+  {id:'c3',code:'CS303',name:'DBMS',credits:3,dept:'Computer Science'},
+  {id:'c4',code:'MA201',name:'Mathematics III',credits:3,dept:'Mathematics'},
+  {id:'c5',code:'CS401',name:'AI & Machine Learning',credits:4,dept:'Computer Science'},
+  {id:'c6',code:'CS304',name:'Computer Networks',credits:3,dept:'Computer Science'},
+];
+const DEFAULT_FACULTY=[
+  {id:'f1',name:'Dr. Priya Sharma',dept:'Computer Science',email:'p.sharma@college.edu'},
+  {id:'f2',name:'Prof. Rakesh Mehta',dept:'Mathematics',email:'r.mehta@college.edu'},
+  {id:'f3',name:'Dr. Suresh Rao',dept:'Computer Science',email:'s.rao@college.edu'},
+  {id:'f4',name:'Prof. Aisha Khan',dept:'Computer Science',email:'a.khan@college.edu'},
+  {id:'f5',name:'Dr. Vijay Patel',dept:'AI & DS',email:'v.patel@college.edu'},
+];
+const DEFAULT_ROOMS=[
+  {id:'R101',type:'Classroom',capacity:60},{id:'R102',type:'Classroom',capacity:60},
+  {id:'R103',type:'Classroom',capacity:45},{id:'R201',type:'Seminar Hall',capacity:120},
+  {id:'R202',type:'Classroom',capacity:60},{id:'Lab-A',type:'Lab',capacity:30},
+  {id:'Lab-B',type:'Lab',capacity:30},
+];
+const DEFAULT_SCHEDULE=[
+  {id:1,courseId:'c1',facultyId:'f1',room:'R101',day:'Mon',start:'09:00',end:'10:00',sectionIds:['s1'],strength:62,batch:'',isMerged:false},
+  {id:2,courseId:'c4',facultyId:'f2',room:'R102',day:'Mon',start:'10:00',end:'11:00',sectionIds:['s1'],strength:62,batch:'',isMerged:false},
+  {id:3,courseId:'c2',facultyId:'f3',room:'Lab-A',day:'Tue',start:'09:00',end:'11:00',sectionIds:['s2'],strength:30,batch:'',isMerged:false},
+  {id:4,courseId:'c3',facultyId:'f1',room:'R103',day:'Tue',start:'10:00',end:'11:00',sectionIds:['s1'],strength:62,batch:'',isMerged:false},
+  {id:5,courseId:'c6',facultyId:'f4',room:'R201',day:'Wed',start:'11:00',end:'12:00',sectionIds:['s3'],strength:45,batch:'',isMerged:false},
+  {id:6,courseId:'c5',facultyId:'f5',room:'R202',day:'Thu',start:'14:00',end:'15:00',sectionIds:['s1'],strength:62,batch:'',isMerged:false},
+  {id:7,courseId:'c1',facultyId:'f3',room:'R101',day:'Mon',start:'09:00',end:'10:00',sectionIds:['s2'],strength:58,batch:'',isMerged:false},
+  {id:8,courseId:'c3',facultyId:'f4',room:'R102',day:'Fri',start:'10:00',end:'11:00',sectionIds:['s3'],strength:45,batch:'',isMerged:false},
+  {id:9,courseId:'c4',facultyId:'f2',room:'R201',day:'Wed',start:'09:00',end:'10:00',sectionIds:['s1','s2'],strength:120,batch:'',isMerged:true},
+];
+const DEFAULT_NID=10;
+
+// ── PERSISTENCE HELPERS ──────────────────────────────────────────
+const SS_KEY='smartschedule_v1';
+function saveAll(){
+  try{
+    localStorage.setItem(SS_KEY, JSON.stringify({
+      timeSlots, sections, courses, faculty, rooms, schedule, nid,
+      savedAt: Date.now()
+    }));
+  } catch(e){ console.warn('Save failed:', e); }
+}
+function loadAll(){
+  try{
+    const raw=localStorage.getItem(SS_KEY);
+    if(!raw) return false;
+    const d=JSON.parse(raw);
+    if(!d||!d.schedule) return false;
+    timeSlots = d.timeSlots || DEFAULT_TIME_SLOTS;
+    sections  = d.sections  || DEFAULT_SECTIONS;
+    courses   = d.courses   || DEFAULT_COURSES;
+    faculty   = d.faculty   || DEFAULT_FACULTY;
+    rooms     = d.rooms     || DEFAULT_ROOMS;
+    schedule  = d.schedule  || DEFAULT_SCHEDULE;
+    nid       = d.nid       || (Math.max(0,...schedule.map(s=>s.id))+1);
+    return true;
+  } catch(e){ console.warn('Load failed:', e); return false; }
+}
+function resetToDefault(){
+  if(!confirm('Reset ALL data to factory defaults? This cannot be undone.')) return;
+  localStorage.removeItem(SS_KEY);
+  timeSlots=[...DEFAULT_TIME_SLOTS.map(t=>({...t}))];
+  sections=[...DEFAULT_SECTIONS.map(s=>({...s}))];
+  courses=[...DEFAULT_COURSES.map(c=>({...c}))];
+  faculty=[...DEFAULT_FACULTY.map(f=>({...f}))];
+  rooms=[...DEFAULT_ROOMS.map(r=>({...r}))];
+  schedule=[...DEFAULT_SCHEDULE.map(s=>({...s}))];
+  nid=DEFAULT_NID;
+  saveAll();
+  goTo('timetable');
+  showToast('✓ Data reset to defaults', 'ok');
+}
+function clearAllData(){
+  if(!confirm('Clear ALL scheduled classes, sections, courses and faculty? This cannot be undone.')) return;
+  schedule=[];sections=[];courses=[];faculty=[];rooms=[];
+  timeSlots=[...DEFAULT_TIME_SLOTS.map(t=>({...t}))];
+  nid=1;
+  saveAll();
+  goTo('timetable');
+  showToast('✓ All data cleared', 'ok');
+}
+
+// ── AUTO-SAVE: wrap all mutating operations ──────────────────────
+// We call saveAll() after every operation that changes data.
+// Defined here so it's available before use.
+
+// ── INIT DATA ────────────────────────────────────────────────────
+let timeSlots, sections, courses, faculty, rooms, schedule, nid;
+let pendingBook=null;
+let editingSlotId=null;
+let editTimeIdx=null;
+let xlData=[];
+let secView='single',facView='single';
+
+const loaded = loadAll();
+if(!loaded){
+  // First ever load — use defaults
+  timeSlots=[...DEFAULT_TIME_SLOTS.map(t=>({...t}))];
+  sections=[...DEFAULT_SECTIONS.map(s=>({...s}))];
+  courses=[...DEFAULT_COURSES.map(c=>({...c}))];
+  faculty=[...DEFAULT_FACULTY.map(f=>({...f}))];
+  rooms=[...DEFAULT_ROOMS.map(r=>({...r}))];
+  schedule=[...DEFAULT_SCHEDULE.map(s=>({...s}))];
+  nid=DEFAULT_NID;
+  saveAll();
+}
+
+// ================================================================
+// HELPERS
+// ================================================================
+const getCo=id=>courses.find(c=>c.id===id)||{name:'?',code:'?'};
+const getFa=id=>faculty.find(f=>f.id===id)||{name:'?'};
+const getRm=id=>rooms.find(r=>r.id===id)||{id,type:'?',capacity:0};
+const getSec=id=>sections.find(s=>s.id===id)||{name:id||'—',strength:0};
+const overlap=(s1,e1,s2,e2)=>s1<e2&&s2<e1;
+
+function secNames(sectionIds){return(sectionIds||[]).map(id=>getSec(id).name).join(' + ');}
+function slotStrength(s){return s.strength||0;}
+function getTimes(){return timeSlots.map(ts=>ts.start);}
+
+function getClashes(){
+  const cl=[];
+  for(let i=0;i<schedule.length;i++){
+    for(let j=i+1;j<schedule.length;j++){
+      const a=schedule[i],b=schedule[j];
+      if(a.day!==b.day||!overlap(a.start,a.end,b.start,b.end))continue;
+      if(a.room===b.room)cl.push({type:'ROOM',ids:[a.id,b.id],
+        msg:`Room <strong>${a.room}</strong> double-booked — <strong>${a.day} ${a.start}–${a.end}</strong>`,
+        detail:`"${getCo(a.courseId).name}" (${secNames(a.sectionIds)}) & "${getCo(b.courseId).name}" (${secNames(b.sectionIds)})`});
+      // Faculty clash — but not if it's the same merged slot (shouldn't happen)
+      if(a.facultyId===b.facultyId)cl.push({type:'FACULTY',ids:[a.id,b.id],
+        msg:`<strong>${getFa(a.facultyId).name}</strong> has overlapping classes on <strong>${a.day}</strong>`,
+        detail:`"${getCo(a.courseId).name}" in ${a.room} & "${getCo(b.courseId).name}" in ${b.room}`});
+    }
+  }
+  return cl;
+}
+function getClashedIds(){const s=new Set();getClashes().forEach(c=>c.ids.forEach(i=>s.add(i)));return s;}
+
+function totalStudents(){return schedule.reduce((acc,s)=>acc+slotStrength(s),0);}
+function mergedCount(){return schedule.filter(s=>s.isMerged).length;}
+
+function updateGlobal(){
+  const cl=getClashes();
+  document.getElementById('sv-c').textContent=schedule.length;
+  document.getElementById('sv-cl').textContent=cl.length;
+  document.getElementById('sv-s').textContent=new Set(schedule.flatMap(s=>s.sectionIds||[])).size;
+  document.getElementById('sv-str').textContent=schedule.reduce((a,s)=>{const str=s.strength||0;return a+(s.isMerged?str:str);},0);
+  document.getElementById('sv-mg').textContent=mergedCount();
+  const hdr=document.getElementById('hdr-clash');
+  hdr.className=cl.length?'c-bad':'c-ok';
+  hdr.textContent=cl.length?`⚠ ${cl.length} Clash${cl.length>1?'es':''}`:'✓ No Clashes';
+  const p=document.getElementById('cp-body');
+  p.innerHTML=cl.length===0?'<div class="cp-ok">● No clashes</div>':
+    cl.slice(0,4).map(c=>`<div class="cpi"><div class="cpi-t">${c.type==='ROOM'?'🏫 Room':'👤 Faculty'}</div><div class="cpi-d">${c.msg}</div></div>`).join('')+(cl.length>4?`<div style="color:var(--mu);font-size:10px;padding:4px">+${cl.length-4} more</div>`:'');
+}
+
+// ================================================================
+// NAVIGATION
+// ================================================================
+const PAGES=['timetable','section-tt','faculty-tt','room-finder','add-class','merge','import','classes','time-slots','suggestions','sections','courses','faculty','rooms-mgmt','data-mgmt'];
+function goTo(name){
+  PAGES.forEach(p=>{
+    const el=document.getElementById('page-'+p);if(el){el.classList.remove('show');if(p===name)el.classList.add('show');}
+    const nav=document.getElementById('nav-'+p);if(nav){nav.classList.remove('active');if(p===name)nav.classList.add('active');}
+  });
+  // Clear header chips unless staying on a filtered view
+  if(!['timetable','section-tt','faculty-tt'].includes(name)){
+    ['hdr-faculty-chip','hdr-section-chip','hdr-room-chip'].forEach(id=>document.getElementById(id).style.display='none');
+  }
+  if(name==='timetable'){populateTTFilter();renderTT(schedule);updateWeekBanner('all','');}
+  if(name==='section-tt'){populateSecPick();renderSectionTT();}
+  if(name==='faculty-tt'){populateFacPick();renderFacultyTT();}
+  if(name==='room-finder'){populateRFTime();renderRF();}
+  if(name==='add-class')populateACSelects();
+  if(name==='merge')populateMergeForm();
+  if(name==='classes')renderClasses();
+  if(name==='time-slots')renderTimeSlots();
+  if(name==='suggestions')renderSuggestions();
+  if(name==='sections')renderSections();
+  if(name==='courses')renderCourses();
+  if(name==='faculty')renderFacultyPage();
+  if(name==='rooms-mgmt')renderRooms();
+  if(name==='data-mgmt')renderDataMgmt();
+}
+
+// ================================================================
+// TIMETABLE RENDER
+// ================================================================
+function slotClass(s,clash){
+  if(clash)return s.isMerged?'s-merged-clash':'s-clash';
+  return s.isMerged?'s-merged':'s-ok';
+}
+function slotBadgeHTML(s,clash,showStr){
+  if(clash)return'<span class="s-clash-pip">!</span>';
+  if(s.isMerged)return'<span class="s-merged-badge">MERGE</span>';
+  if(showStr&&s.strength)return`<span class="s-strength">${s.strength}</span>`;
+  return'';
+}
+
+function buildTT(data,showStr){
+  const cids=getClashedIds();
+  const cols=`82px repeat(7,1fr)`;
+  let h=`<div class="tt-head" style="grid-template-columns:${cols}"><div class="tt-hc"></div>${DAYS.map(d=>`<div class="tt-hc">${d}</div>`).join('')}</div>`;
+  timeSlots.forEach((ts,idx)=>{
+    h+=`<div class="tt-row" style="grid-template-columns:${cols}">`;
+    h+=`<div class="tt-time-cell" onclick="openInlineEditTime(${idx})">
+      <span>${ts.start}<br><span style="color:var(--bd)">│</span><br>${ts.end}</span>
+      <button class="edit-time-btn" title="Edit timing">✏</button>
+    </div>`;
+    DAYS.forEach(day=>{
+      const slots=data.filter(s=>s.day===day&&s.start<=ts.start&&s.end>ts.start);
+      const empty=slots.length===0;
+      h+=`<div class="tt-cell ${empty?'emp':''}" ${empty?`onclick="slotEmpty('${day}','${ts.start}','${ts.end}')"`:''}>`;
+      if(empty)h+=`<div class="ahint">+</div>`;
+      else slots.forEach(s=>{
+        const clash=cids.has(s.id);
+        const badge=slotBadgeHTML(s,clash,showStr);
+        h+=`<div class="slot ${slotClass(s,clash)}" onclick="showSlot(${s.id},event)">
+          ${badge}
+          <div class="s-subj">${getCo(s.courseId).name}</div>
+          <div class="s-meta">${s.room} · ${getFa(s.facultyId).name.split(' ').pop()}</div>
+          <div class="s-meta" style="opacity:.65">${secNames(s.sectionIds)}${s.strength&&showStr?` · <strong style="color:var(--warn)">${s.strength}👥</strong>`:''}</div>
+          <button class="sedit" onclick="event.stopPropagation();openEditSlot(${s.id})">✏</button>
+          <button class="sdel" onclick="event.stopPropagation();delClass(${s.id})">✕</button>
+        </div>`;
+      });
+      h+=`</div>`;
+    });
+    h+=`</div>`;
+  });
+  return h;
+}
+
+function renderTT(data){
+  const showStr=document.getElementById('tt-show-strength')?.checked||false;
+  document.getElementById('tt-grid').innerHTML=buildTT(data,showStr);
+  updateGlobal();
+}
+
+function populateTTFilter(){
+  const t=document.getElementById('tt-ftype').value||'all';
+  const v=document.getElementById('tt-fval');
+  v.style.display=t==='all'?'none':'block';
+  // Only repopulate when type has actually changed (avoid wiping the user's selected value)
+  const prevType=v.dataset.lastType||'';
+  if(t!==prevType){
+    v.dataset.lastType=t;
+    const cur=v.value;
+    if(t==='section'){v.innerHTML=sections.map(s=>`<option value="${s.id}">${s.name}</option>`).join('');if(cur)v.value=cur;}
+    else if(t==='faculty'){v.innerHTML=faculty.map(f=>`<option value="${f.id}">${f.name}</option>`).join('');if(cur)v.value=cur;}
+    else if(t==='room'){v.innerHTML=rooms.map(r=>`<option value="${r.id}">${r.id}</option>`).join('');if(cur)v.value=cur;}
+  } else {
+    // Same type — just ensure list is populated (first load)
+    if(v.options.length===0){
+      if(t==='section')v.innerHTML=sections.map(s=>`<option value="${s.id}">${s.name}</option>`).join('');
+      else if(t==='faculty')v.innerHTML=faculty.map(f=>`<option value="${f.id}">${f.name}</option>`).join('');
+      else if(t==='room')v.innerHTML=rooms.map(r=>`<option value="${r.id}">${r.id}</option>`).join('');
+    }
+  }
+}
+function applyTTFilter(){
+  const type=document.getElementById('tt-ftype').value;
+  const v=document.getElementById('tt-fval');
+  v.style.display=type==='all'?'none':'block';
+  // Only rebuild list when switching type
+  const prevType=v.dataset.lastType||'';
+  if(type!==prevType){
+    v.dataset.lastType=type;
+    if(type==='section')v.innerHTML=sections.map(s=>`<option value="${s.id}">${s.name}</option>`).join('');
+    else if(type==='faculty')v.innerHTML=faculty.map(f=>`<option value="${f.id}">${f.name}</option>`).join('');
+    else if(type==='room')v.innerHTML=rooms.map(r=>`<option value="${r.id}">${r.id}</option>`).join('');
+  }
+  const val=v.value;
+  let filtered=schedule;
+  if(type==='section'&&val)filtered=schedule.filter(s=>s.sectionIds&&s.sectionIds.includes(val));
+  else if(type==='faculty'&&val)filtered=schedule.filter(s=>s.facultyId===val);
+  else if(type==='room'&&val)filtered=schedule.filter(s=>s.room===val);
+  updateWeekBanner(type, val);
+  renderTT(filtered);
+}
+
+// ================================================================
+// SECTION-WISE TT
+// ================================================================
+function populateSecPick(){
+  const sel=document.getElementById('sec-pick');
+  const cur=sel.value;
+  sel.innerHTML=sections.map(s=>`<option value="${s.id}">${s.name}</option>`).join('');
+  // Restore previous selection if still valid, otherwise keep first item
+  if(cur && sections.find(s=>s.id===cur)) sel.value=cur;
+}
+function setSView(v){
+  secView=v;
+  document.getElementById('sv-btn-single').classList.toggle('active',v==='single');
+  document.getElementById('sv-btn-all').classList.toggle('active',v==='all');
+  renderSectionTT();
+}
+function renderSectionTT(){
+  // Do NOT call populateSecPick here — that resets selection.
+  // populateSecPick is only called by goTo('section-tt')
+  const con=document.getElementById('section-tt-con');
+  if(secView==='all'){
+    con.innerHTML=sections.map(sec=>{
+      const data=schedule.filter(s=>s.sectionIds&&s.sectionIds.includes(sec.id));
+      const str=sec.strength||0;
+      return `<div style="margin-bottom:22px">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+          <span style="font-family:'Syne',sans-serif;font-size:14px;font-weight:800;color:var(--ac)">${sec.name}</span>
+          <span style="color:var(--mu);font-size:11px">${sec.dept||''}</span>
+          <span class="tag t-warn" style="margin-left:4px">👥 ${str} students</span>
+          <span class="tag t-blue">${data.length} classes/wk</span>
+        </div>
+        <div class="tt-wrap"><div class="tt">${buildTT(data,true)}</div></div>
+      </div>`;
+    }).join('');
+  } else {
+    const secId=document.getElementById('sec-pick').value;
+    const data=schedule.filter(s=>s.sectionIds&&s.sectionIds.includes(secId));
+    const sec=sections.find(s=>s.id===secId);
+    con.innerHTML=`
+      <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap">
+        <div class="sc" style="flex:1;min-width:100px"><div class="scv" style="font-size:18px;color:var(--ac)">${data.length}</div><div class="scl">Classes/Wk</div></div>
+        <div class="sc" style="flex:1;min-width:100px"><div class="scv" style="font-size:18px;color:var(--warn)">${sec?sec.strength||0:0}</div><div class="scl">Students</div></div>
+        <div class="sc" style="flex:1;min-width:100px"><div class="scv" style="font-size:18px;color:var(--merge)">${data.filter(s=>s.isMerged).length}</div><div class="scl">Merged</div></div>
+      </div>
+      <div class="tt-wrap"><div class="tt">${buildTT(data,true)}</div></div>`;
+  }
+  updateSectionBanner();
+}
+
+// ================================================================
+// FACULTY-WISE TT
+// ================================================================
+function populateFacPick(){
+  const sel=document.getElementById('fac-pick');
+  const cur=sel.value;
+  sel.innerHTML=faculty.map(f=>`<option value="${f.id}">${f.name}</option>`).join('');
+  if(cur && faculty.find(f=>f.id===cur)) sel.value=cur;
+}
+function setFView(v){
+  facView=v;
+  document.getElementById('fv-btn-single').classList.toggle('active',v==='single');
+  document.getElementById('fv-btn-cards').classList.toggle('active',v==='cards');
+  renderFacultyTT();
+}
+function renderFacultyTT(){
+  // Do NOT call populateFacPick here — that resets selection.
+  const con=document.getElementById('faculty-tt-con');
+  const cids=getClashedIds();
+  if(facView==='cards'){
+    con.innerHTML=`<div class="fac-grid">${faculty.map(f=>{
+      const myS=schedule.filter(s=>s.facultyId===f.id).sort((a,b)=>DAYS.indexOf(a.day)-DAYS.indexOf(b.day)||a.start.localeCompare(b.start));
+      return `<div class="fac-card">
+        <div class="fc-name">${f.name}</div>
+        <div class="fc-sub">${f.dept||''} · ${myS.length} class${myS.length!==1?'es':''}/wk</div>
+        ${!myS.length?'<div style="color:var(--mu);font-size:10px">No classes</div>':
+        myS.map(s=>{const clash=cids.has(s.id);return`<div class="fc-row">
+          <span class="fc-day ${clash?'fc-clash':''}">${s.day} ${s.start}</span>
+          <span>${getCo(s.courseId).name}${s.isMerged?` <span class="tag t-merge" style="font-size:8px">M</span>`:''}</span>
+          ${clash?'<span style="color:var(--danger);margin-left:auto">⚠</span>':''}
+        </div>`;}).join('')}
+      </div>`;
+    }).join('')}</div>`;
+  } else {
+    const fId=document.getElementById('fac-pick').value;
+    const data=schedule.filter(s=>s.facultyId===fId);
+    const myCl=getClashes().filter(c=>c.type==='FACULTY'&&c.ids.some(id=>{const sl=schedule.find(x=>x.id===id);return sl&&sl.facultyId===fId;}));
+    con.innerHTML=`
+      <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap">
+        <div class="sc" style="flex:1;min-width:100px"><div class="scv" style="font-size:18px;color:var(--ac)">${data.length}</div><div class="scl">Classes/Wk</div></div>
+        <div class="sc" style="flex:1;min-width:100px"><div class="scv" style="font-size:18px;color:var(--danger)">${myCl.length}</div><div class="scl">Clashes</div></div>
+        <div class="sc" style="flex:1;min-width:100px"><div class="scv" style="font-size:18px;color:var(--warn)">${data.reduce((a,s)=>a+slotStrength(s),0)}</div><div class="scl">Total Students</div></div>
+      </div>
+      <div class="tt-wrap"><div class="tt">${buildTT(data,true)}</div></div>`;
+  }
+  updateFacultyBanner();
+}
+
+// ================================================================
+// ROOM FINDER
+// ================================================================
+function populateRFTime(){
+  const sel=document.getElementById('rf-time');if(sel.options.length>0)return;
+  timeSlots.forEach(ts=>{const o=document.createElement('option');o.value=ts.start;o.textContent=`${ts.start}–${ts.end}`;sel.appendChild(o);});
+}
+function renderRF(){
+  const day=document.getElementById('rf-day').value;
+  const time=document.getElementById('rf-time').value;if(!time)return;
+  const ts=timeSlots.find(t=>t.start===time);
+  const end=ts?ts.end:time;
+  document.getElementById('rf-grid').innerHTML=rooms.map(r=>{
+    const occ=schedule.filter(s=>s.room===r.id&&s.day===day&&s.start<=time&&s.end>time);
+    const free=occ.length===0;
+    const totalStr=occ.reduce((a,s)=>a+slotStrength(s),0);
+    const pct=r.capacity?Math.min(100,Math.round(totalStr/r.capacity*100)):0;
+    return `<div class="rc ${free?'free':'occ'}" onclick="${free?`rfFree('${r.id}','${day}','${time}','${end}')`:`showSlot(${occ[0].id},null)`}">
+      <div class="rc-n">${r.id}</div>
+      <div class="rc-s"><span class="dot ${free?'dg':'dr'}"></span>${free?'Available':'Occupied'}</div>
+      <div class="rc-i">${free?`${r.type} · cap ${r.capacity}`:
+        `${getCo(occ[0].courseId).name}<br>${secNames(occ[0].sectionIds)}<br><span style="color:var(--warn)">👥 ${totalStr}/${r.capacity}</span>`}</div>
+      ${!free&&r.capacity?`<div class="strength-bar" style="margin-top:5px"><div class="strength-fill" style="width:${pct}%;background:${pct>100?'var(--danger)':pct>80?'var(--warn)':'var(--ok)'}"></div></div>`:''}
+    </div>`;
+  }).join('');
+}
+function rfFree(roomId,day,start,end){
+  pendingBook={day,start,end,room:roomId};
+  document.getElementById('mav-t').textContent=`${roomId} is Free!`;
+  document.getElementById('mav-b').innerHTML=`<strong>${roomId}</strong> is available on <strong>${day} at ${start}–${end}</strong>. Book a class here?`;
+  document.getElementById('mav-m').innerHTML=`
+    <div class="mr"><span class="mk">Room</span><span class="mv">${roomId}</span></div>
+    <div class="mr"><span class="mk">Type</span><span class="mv">${getRm(roomId).type} · cap ${getRm(roomId).capacity}</span></div>
+    <div class="mr"><span class="mk">Day / Time</span><span class="mv">${day}, ${start}–${end}</span></div>`;
+  openM('m-avail');
+}
+
+// ================================================================
+// SLOT EVENTS
+// ================================================================
+function slotEmpty(day,start,end){
+  pendingBook={day,start,end,room:''};
+  document.getElementById('mav-t').textContent='Slot is Free!';
+  document.getElementById('mav-b').innerHTML=`<strong>${day}, ${start}–${end}</strong> has no class scheduled.`;
+  document.getElementById('mav-m').innerHTML=`
+    <div class="mr"><span class="mk">Day</span><span class="mv">${day}</span></div>
+    <div class="mr"><span class="mk">Time</span><span class="mv">${start}–${end}</span></div>
+    <div class="mr"><span class="mk">Status</span><span class="mv" style="color:var(--ok)">✓ Free</span></div>`;
+  openM('m-avail');
+}
+function bookSlot(){
+  closeM('m-avail');populateACSelects();
+  if(pendingBook){
+    if(pendingBook.day)document.getElementById('ac-day').value=pendingBook.day;
+    if(pendingBook.start)document.getElementById('ac-start').value=pendingBook.start;
+    if(pendingBook.end)document.getElementById('ac-end').value=pendingBook.end;
+    if(pendingBook.room){const rs=document.getElementById('ac-room');for(let o of rs.options)if(o.value===pendingBook.room){rs.value=pendingBook.room;break;}}
+  }
+  goTo('add-class');
+}
+function showSlot(id,e){
+  if(e)e.stopPropagation();
+  const s=schedule.find(x=>x.id===id);if(!s)return;
+  const clash=getClashedIds().has(id);
+  if(clash){
+    const cl=getClashes().filter(c=>c.ids.includes(id));
+    if(cl.length){ showClashWithSuggestions(cl[0], id); return; }
+  }
+  const co=getCo(s.courseId),fa=getFa(s.facultyId);
+  const rm=getRm(s.room);
+  const strPct=rm.capacity?Math.round((s.strength||0)/rm.capacity*100):null;
+  document.getElementById('ms-title').textContent=co.name;
+  document.getElementById('ms-ico').textContent=s.isMerged?'🔀':'📖';
+  document.getElementById('ms-meta').innerHTML=`
+    <div class="mr"><span class="mk">Code</span><span class="mv">${co.code}</span></div>
+    <div class="mr"><span class="mk">Faculty</span><span class="mv">${fa.name}</span></div>
+    <div class="mr"><span class="mk">Room</span><span class="mv">${s.room} (cap ${rm.capacity})</span></div>
+    <div class="mr"><span class="mk">Section(s)</span><span class="mv">${secNames(s.sectionIds)}</span></div>
+    <div class="mr"><span class="mk">Day / Time</span><span class="mv">${s.day}, ${s.start}–${s.end}</span></div>
+    <div class="mr"><span class="mk">Student Strength</span><span class="mv">${s.strength||'—'}${strPct!==null?` <span style="color:${strPct>100?'var(--danger)':strPct>80?'var(--warn)':'var(--ok)'}">(${strPct}% of room)</span>`:''}</span></div>
+    <div class="mr"><span class="mk">Type</span><span class="mv">${s.isMerged?'<span class="tag t-merge">🔀 Merged</span>':'Regular'}</span></div>
+    <div class="mr"><span class="mk">Status</span><span class="mv" style="color:var(--ok)">✓ No Clash</span></div>`;
+  editingSlotId=id;
+  document.getElementById('ms-del').onclick=()=>{delClass(id);closeM('m-slot');};
+  switchToView();
+  openM('m-slot');
+}
+function openEditSlot(id){showSlot(id,null);switchToEdit();}
+
+function switchToEdit(){
+  document.getElementById('ms-view').style.display='none';
+  document.getElementById('ms-edit').style.display='block';
+  const s=schedule.find(x=>x.id===editingSlotId);if(!s)return;
+  // Populate edit selects
+  const seC=document.getElementById('se-course');
+  seC.innerHTML=courses.map(c=>`<option value="${c.id}">${c.code} – ${c.name}</option>`).join('');seC.value=s.courseId;
+  const seF=document.getElementById('se-faculty');
+  seF.innerHTML=faculty.map(f=>`<option value="${f.id}">${f.name}</option>`).join('');seF.value=s.facultyId;
+  const seR=document.getElementById('se-room');
+  seR.innerHTML=rooms.map(r=>`<option value="${r.id}">${r.id}</option>`).join('');seR.value=s.room;
+  document.getElementById('se-day').value=s.day;
+  const seSt=document.getElementById('se-start');
+  seSt.innerHTML=timeSlots.map(ts=>`<option value="${ts.start}">${ts.start}</option>`).join('');seSt.value=s.start;
+  const seEn=document.getElementById('se-end');
+  seEn.innerHTML=timeSlots.map(ts=>`<option value="${ts.end}">${ts.end}</option>`).join('');seEn.value=s.end;
+  document.getElementById('se-strength').value=s.strength||'';
+}
+function switchToView(){
+  document.getElementById('ms-view').style.display='block';
+  document.getElementById('ms-edit').style.display='none';
+  document.getElementById('se-err').style.display='none';
+}
+function saveEdit(){
+  const s=schedule.find(x=>x.id===editingSlotId);if(!s)return;
+  const start=document.getElementById('se-start').value;
+  const end=document.getElementById('se-end').value;
+  const err=document.getElementById('se-err');
+  if(start>=end){err.style.display='block';err.textContent='End must be after start.';return;}
+  s.courseId=document.getElementById('se-course').value;
+  s.facultyId=document.getElementById('se-faculty').value;
+  s.room=document.getElementById('se-room').value;
+  s.day=document.getElementById('se-day').value;
+  s.start=start;s.end=end;
+  s.strength=parseInt(document.getElementById('se-strength').value)||s.strength;
+  saveAll();
+  closeM('m-slot');
+  renderTT(schedule);renderClasses();
+  const cl=getClashes().filter(c=>c.ids.includes(editingSlotId));
+  if(cl.length){ showClashWithSuggestions(cl[0], editingSlotId); }
+}
+
+// ================================================================
+// ADD CLASS
+// ================================================================
+function populateACSelects(){
+  const cs=document.getElementById('ac-course');cs.innerHTML='<option value="">-- Course --</option>';courses.forEach(c=>{const o=document.createElement('option');o.value=c.id;o.textContent=`${c.code} – ${c.name}`;cs.appendChild(o);});
+  const fs=document.getElementById('ac-faculty');fs.innerHTML='<option value="">-- Faculty --</option>';faculty.forEach(f=>{const o=document.createElement('option');o.value=f.id;o.textContent=f.name;fs.appendChild(o);});
+  const rs=document.getElementById('ac-room');rs.innerHTML='<option value="">-- Room --</option>';rooms.forEach(r=>{const o=document.createElement('option');o.value=r.id;o.textContent=`${r.id} (${r.type}, ${r.capacity})`;rs.appendChild(o);});
+  const ss=document.getElementById('ac-sec');const cur=ss.value;
+  ss.innerHTML='<option value="">-- Section --</option>'+sections.map(s=>`<option value="${s.id}">${s.name}</option>`).join('')+'<option value="__new__">+ New Section</option>';
+  if(cur&&cur!=='__new__')ss.value=cur;
+  ['ac-start','ac-end'].forEach(id=>{const sel=document.getElementById(id);sel.innerHTML='<option value="">--</option>';timeSlots.forEach(ts=>{const o=document.createElement('option');o.value=ts.start;o.textContent=ts.start;sel.appendChild(o);});});
+}
+function secSelectChange(){document.getElementById('new-sec-row').style.display=document.getElementById('ac-sec').value==='__new__'?'grid':'none';}
+function submitAC(){
+  const cId=document.getElementById('ac-course').value;
+  const fId=document.getElementById('ac-faculty').value;
+  const room=document.getElementById('ac-room').value;
+  let sId=document.getElementById('ac-sec').value;
+  const day=document.getElementById('ac-day').value;
+  const start=document.getElementById('ac-start').value;
+  const end=document.getElementById('ac-end').value;
+  const strength=parseInt(document.getElementById('ac-strength').value)||0;
+  const batch=document.getElementById('ac-batch').value.trim();
+  const err=document.getElementById('ac-err');
+  if(!cId||!fId||!room||!sId||!day||!start||!end){err.style.display='block';err.textContent='Fill all required fields.';return;}
+  if(start>=end){err.style.display='block';err.textContent='End must be after start.';return;}
+  if(sId==='__new__'){
+    const nm=document.getElementById('ac-new-sec').value.trim();
+    const dp=document.getElementById('ac-new-dept').value.trim();
+    if(!nm){err.style.display='block';err.textContent='Enter section name.';return;}
+    sId='s'+Date.now();sections.push({id:sId,name:nm,dept:dp,strength:strength||0});
+  }
+  err.style.display='none';
+  const ns={id:nid++,courseId:cId,facultyId:fId,room,sectionIds:[sId],day,start,end,strength:strength||getSec(sId).strength||0,batch,isMerged:false};
+  schedule.push(ns);
+  const cl=getClashes().filter(c=>c.ids.includes(ns.id));
+  saveAll();
+  clearAC();goTo('timetable');
+  if(cl.length){ showClashWithSuggestions(cl[0], ns.id); }
+}
+function clearAC(){
+  ['ac-course','ac-faculty','ac-room','ac-sec','ac-day','ac-start','ac-end'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('ac-strength').value='';document.getElementById('ac-batch').value='';
+  document.getElementById('ac-new-sec').value='';document.getElementById('ac-new-dept').value='';
+  document.getElementById('new-sec-row').style.display='none';document.getElementById('ac-err').style.display='none';
+}
+
+// ================================================================
+// MERGE CLASSES
+// ================================================================
+function populateMergeForm(){
+  const cs=document.getElementById('mg-course');cs.innerHTML='<option value="">-- Course --</option>';courses.forEach(c=>{const o=document.createElement('option');o.value=c.id;o.textContent=`${c.code} – ${c.name}`;cs.appendChild(o);});
+  const fs=document.getElementById('mg-faculty');fs.innerHTML='<option value="">-- Faculty --</option>';faculty.forEach(f=>{const o=document.createElement('option');o.value=f.id;o.textContent=f.name;fs.appendChild(o);});
+  const rs=document.getElementById('mg-room');rs.innerHTML='<option value="">-- Room --</option>';rooms.forEach(r=>{const o=document.createElement('option');o.value=r.id;o.textContent=`${r.id} (${r.type}, cap ${r.capacity})`;rs.appendChild(o);});
+  // Section checkboxes
+  const con=document.getElementById('mg-sec-checks');
+  con.innerHTML=sections.map(s=>`
+    <label class="sec-check-item" id="sc-lbl-${s.id}" onclick="toggleSecCheck('${s.id}')">
+      <input type="checkbox" id="sc-${s.id}" value="${s.id}" style="pointer-events:none" onchange="calcMergeStrength()">
+      <span class="sec-check-label">${s.name}</span>
+      <span style="color:var(--mu);font-size:10px">👥${s.strength||0}</span>
+    </label>`).join('');
+  // Time selects
+  ['mg-start','mg-end'].forEach(id=>{const sel=document.getElementById(id);sel.innerHTML='<option value="">--</option>';timeSlots.forEach(ts=>{const o=document.createElement('option');o.value=ts.start;o.textContent=ts.start;sel.appendChild(o);});});
+  renderMergedList();
+}
+function toggleSecCheck(id){
+  const cb=document.getElementById('sc-'+id);
+  const lbl=document.getElementById('sc-lbl-'+id);
+  cb.checked=!cb.checked;
+  lbl.classList.toggle('selected',cb.checked);
+  calcMergeStrength();
+}
+function calcMergeStrength(){
+  const checked=sections.filter(s=>document.getElementById('sc-'+s.id)?.checked);
+  const total=checked.reduce((a,s)=>a+(s.strength||0),0);
+  const inp=document.getElementById('mg-strength');
+  if(total>0)inp.placeholder=`Auto: ${total} (${checked.map(s=>s.name).join('+')})`; else inp.placeholder='auto from sections';
+}
+function submitMerge(){
+  const cId=document.getElementById('mg-course').value;
+  const fId=document.getElementById('mg-faculty').value;
+  const room=document.getElementById('mg-room').value;
+  const day=document.getElementById('mg-day').value;
+  const start=document.getElementById('mg-start').value;
+  const end=document.getElementById('mg-end').value;
+  const checked=sections.filter(s=>document.getElementById('sc-'+s.id)?.checked);
+  const err=document.getElementById('mg-err');
+  if(!cId||!fId||!room||!day||!start||!end){err.style.display='block';err.textContent='Fill all required fields.';return;}
+  if(checked.length<2){err.style.display='block';err.textContent='Select at least 2 sections to merge.';return;}
+  if(start>=end){err.style.display='block';err.textContent='End must be after start.';return;}
+  err.style.display='none';
+  const autoStr=checked.reduce((a,s)=>a+(s.strength||0),0);
+  const manStr=parseInt(document.getElementById('mg-strength').value)||0;
+  const ns={id:nid++,courseId:cId,facultyId:fId,room,sectionIds:checked.map(s=>s.id),day,start,end,strength:manStr||autoStr,batch:'',isMerged:true};
+  schedule.push(ns);
+  const cl=getClashes().filter(c=>c.ids.includes(ns.id));
+  saveAll();
+  clearMerge();renderMergedList();goTo('timetable');
+  if(cl.length){ showClashWithSuggestions(cl[0], ns.id); }
+}
+function clearMerge(){
+  ['mg-course','mg-faculty','mg-room','mg-day','mg-start','mg-end'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('mg-strength').value='';document.getElementById('mg-strength').placeholder='auto';
+  document.getElementById('mg-err').style.display='none';
+  sections.forEach(s=>{const cb=document.getElementById('sc-'+s.id);if(cb){cb.checked=false;document.getElementById('sc-lbl-'+s.id).classList.remove('selected');}});
+}
+function renderMergedList(){
+  const merged=schedule.filter(s=>s.isMerged);
+  const el=document.getElementById('merged-list');
+  if(!merged.length){el.innerHTML='<div style="color:var(--mu);font-size:12px;text-align:center;padding:30px">No merged classes yet.</div>';return;}
+  el.innerHTML=merged.map(s=>`<div style="background:var(--sf2);border:1px solid rgba(168,85,247,.3);border-radius:9px;padding:11px;margin-bottom:8px">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start">
+      <div>
+        <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:12px;color:var(--merge)">${getCo(s.courseId).name}</div>
+        <div style="font-size:10px;color:var(--mu);margin-top:3px">${getFa(s.facultyId).name} · ${s.room} · ${s.day} ${s.start}–${s.end}</div>
+        <div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:5px">${(s.sectionIds||[]).map(id=>`<span class="tag t-merge" style="font-size:9px">${getSec(id).name}</span>`).join('')}
+        <span class="tag t-warn" style="font-size:9px">👥 ${s.strength}</span></div>
+      </div>
+      <button class="btn btn-danger btn-sm" onclick="delClass(${s.id});renderMergedList()">✕</button>
+    </div>
+  </div>`).join('');
+}
+
+// ================================================================
+// TIME SLOTS EDITOR
+// ================================================================
+function renderTimeSlots(){
+  const el=document.getElementById('time-slots-list');
+  el.innerHTML=timeSlots.map((ts,idx)=>{
+    const inUse=schedule.some(s=>s.start===ts.start||s.end===ts.end);
+    return `<div class="time-slot-row">
+      <span class="ts-label">Slot ${idx+1}</span>
+      <input type="time" value="${ts.start}" onchange="updateTS(${idx},'start',this.value)" title="Start time">
+      <span style="color:var(--mu);font-size:12px">→</span>
+      <input type="time" value="${ts.end}" onchange="updateTS(${idx},'end',this.value)" title="End time">
+      <span style="font-size:10px;color:${inUse?'var(--warn)':'var(--mu)'};">${inUse?'⚠ In use':''}</span>
+      <button class="ts-del" onclick="deleteTS(${idx})" ${inUse?'title="Cannot delete: slot in use" style="opacity:.4;cursor:not-allowed"':''}>✕</button>
+    </div>`;
+  }).join('');
+}
+function updateTS(idx,key,val){timeSlots[idx][key]=val;}
+function deleteTS(idx){
+  const ts=timeSlots[idx];
+  if(schedule.some(s=>s.start===ts.start||s.end===ts.end)){alert('Cannot delete: this time slot is used by scheduled classes.');return;}
+  timeSlots.splice(idx,1);renderTimeSlots();
+}
+function addTimeSlot(){
+  const last=timeSlots[timeSlots.length-1];
+  const newStart=last?last.end:'08:00';
+  const [h,m]=newStart.split(':').map(Number);
+  const newEnd=`${String(h+1).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+  timeSlots.push({start:newStart,end:newEnd});
+  renderTimeSlots();
+}
+function applyTimeSlots(){
+  timeSlots.sort((a,b)=>a.start.localeCompare(b.start));
+  saveAll();
+  renderTimeSlots();renderTT(schedule);
+  // refresh RF time select
+  const rfSel=document.getElementById('rf-time');rfSel.innerHTML='';timeSlots.forEach(ts=>{const o=document.createElement('option');o.value=ts.start;o.textContent=`${ts.start}–${ts.end}`;rfSel.appendChild(o);});
+  alert('Time slots applied to timetable!');
+}
+function resetTimeSlotsDefault(){
+  timeSlots=[
+    {start:'08:00',end:'09:00'},{start:'09:00',end:'10:00'},{start:'10:00',end:'11:00'},
+    {start:'11:00',end:'12:00'},{start:'12:00',end:'13:00'},{start:'13:00',end:'14:00'},
+    {start:'14:00',end:'15:00'},{start:'15:00',end:'16:00'},{start:'16:00',end:'17:00'},
+    {start:'17:00',end:'18:00'},
+  ];saveAll();renderTimeSlots();
+}
+function quickAddSlot(){
+  const s=document.getElementById('qa-start').value;
+  const e=document.getElementById('qa-end').value;
+  if(!s||!e||s>=e){alert('Invalid times.');return;}
+  if(timeSlots.find(ts=>ts.start===s)){alert('Slot with this start time already exists.');return;}
+  timeSlots.push({start:s,end:e});
+  timeSlots.sort((a,b)=>a.start.localeCompare(b.start));
+  saveAll();
+  renderTimeSlots();
+}
+function applyPreset(name){
+  const presets={
+    standard:[['08:00','09:00'],['09:00','10:00'],['10:00','11:00'],['11:00','12:00'],['12:00','13:00'],['13:00','14:00'],['14:00','15:00'],['15:00','16:00'],['16:00','17:00'],['17:00','18:00']],
+    college:[['08:00','09:00'],['09:00','10:00'],['10:00','11:00'],['11:00','12:00'],['12:00','13:00'],['13:00','14:00'],['14:00','15:00'],['15:00','16:00'],['16:00','17:00']],
+    morning:[['07:00','08:00'],['08:00','09:00'],['09:00','10:00'],['10:00','11:00'],['11:00','12:00'],['12:00','13:00']],
+    split:[['09:00','10:00'],['10:00','11:00'],['11:00','12:00'],['12:00','13:00'],['14:00','15:00'],['15:00','16:00'],['16:00','17:00']],
+    halves:[['08:00','09:30'],['09:30','11:00'],['11:00','12:30'],['12:30','14:00'],['14:00','15:30'],['15:30','17:00']],
+  };
+  const p=presets[name];if(!p)return;
+  timeSlots=p.map(([s,e])=>({start:s,end:e}));renderTimeSlots();
+}
+function openInlineEditTime(idx){
+  editTimeIdx=idx;
+  document.getElementById('et-start').value=timeSlots[idx].start;
+  document.getElementById('et-end').value=timeSlots[idx].end;
+  document.getElementById('et-err').style.display='none';
+  openM('m-edittime');
+}
+function saveInlineEdit(){
+  const s=document.getElementById('et-start').value;
+  const e=document.getElementById('et-end').value;
+  const err=document.getElementById('et-err');
+  if(!s||!e||s>=e){err.style.display='block';err.textContent='End must be after start.';return;}
+  timeSlots[editTimeIdx]={start:s,end:e};
+  saveAll();
+  closeM('m-edittime');renderTT(schedule);renderTimeSlots();
+}
+
+// ================================================================
+// ALL CLASSES
+// ================================================================
+function renderClasses(){
+  const sf=document.getElementById('cls-sec-filter');const cur=sf.value;
+  sf.innerHTML='<option value="">All Sections</option>'+sections.map(s=>`<option value="${s.id}">${s.name}</option>`).join('');if(cur)sf.value=cur;
+  const cids=getClashedIds();
+  const filt=cur?schedule.filter(s=>s.sectionIds&&s.sectionIds.includes(cur)):schedule;
+  const tb=document.getElementById('tb-classes');
+  if(!filt.length){tb.innerHTML='<tr><td colspan="10" style="text-align:center;color:var(--mu);padding:32px">No classes.</td></tr>';return;}
+  tb.innerHTML=filt.map(s=>{
+    const clash=cids.has(s.id),co=getCo(s.courseId),fa=getFa(s.facultyId);
+    const rm=getRm(s.room);
+    const pct=rm.capacity&&s.strength?Math.round(s.strength/rm.capacity*100):null;
+    return `<tr>
+      <td style="font-family:'Syne',sans-serif;font-weight:700">${co.name}<br><span style="color:var(--mu);font-size:10px">${co.code}</span></td>
+      <td>${fa.name}</td>
+      <td><span class="tag t-blue">${s.room}</span></td>
+      <td>${(s.sectionIds||[]).map(id=>`<span class="tag t-purple" style="margin-right:2px">${getSec(id).name}</span>`).join('')}</td>
+      <td>${s.day}</td><td>${s.start}–${s.end}</td>
+      <td>${s.strength?`<span style="color:${pct>100?'var(--danger)':pct>80?'var(--warn)':'var(--txt)'}">${s.strength}👥</span>${pct!==null?`<br><span style="font-size:9px;color:var(--mu)">${pct}% of room</span>`:''}`:'-'}</td>
+      <td>${s.isMerged?'<span class="tag t-merge">🔀 Merged</span>':'<span class="tag t-ok">Regular</span>'}</td>
+      <td>${clash?'<span class="tag t-clash">⚠</span>':'<span class="tag t-ok">✓</span>'}</td>
+      <td><button class="btn btn-ghost btn-sm" onclick="openEditSlot(${s.id});openM('m-slot')">✏</button> <button class="btn btn-danger btn-sm" onclick="delClass(${s.id});renderClasses()">✕</button></td>
+    </tr>`;
+  }).join('');
+}
+
+// ================================================================
+// SECTIONS
+// ================================================================
+function renderSections(){
+  const tb=document.getElementById('tb-sections');
+  tb.innerHTML=sections.map(sec=>{
+    const cnt=schedule.filter(s=>s.sectionIds&&s.sectionIds.includes(sec.id)).length;
+    const clCnt=getClashes().filter(c=>c.ids.some(id=>{const sl=schedule.find(x=>x.id===id);return sl&&sl.sectionIds&&sl.sectionIds.includes(sec.id);})).length;
+    return `<tr>
+      <td><span class="tag t-purple">${sec.name}</span></td>
+      <td>${sec.dept||'—'}</td>
+      <td><span style="color:var(--warn);font-weight:600">${sec.strength||'—'}</span> students</td>
+      <td>${cnt}</td>
+      <td>${clCnt?`<span class="tag t-clash">⚠ ${clCnt}</span>`:'<span class="tag t-ok">None</span>'}</td>
+      <td>
+        <button class="btn btn-ghost btn-sm" onclick="goToSecTT('${sec.id}')">View TT</button>
+        <button class="btn btn-danger btn-sm" onclick="delSection('${sec.id}')">Delete</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+function goToSecTT(id){
+  goTo('section-tt');
+  setSView('single');
+  document.getElementById('sec-pick').value=id;
+  renderSectionTT();
+}
+function saveSection(){
+  const name=document.getElementById('ns-name').value.trim();
+  const err=document.getElementById('ns-err');
+  if(!name){err.style.display='block';err.textContent='Name required.';return;}
+  err.style.display='none';
+  sections.push({id:'s'+Date.now(),name,dept:document.getElementById('ns-dept').value.trim(),strength:parseInt(document.getElementById('ns-strength').value)||0});
+  ['ns-name','ns-dept','ns-strength'].forEach(i=>document.getElementById(i).value='');
+  saveAll();
+  closeM('m-section');renderSections();
+}
+function delSection(id){sections=sections.filter(s=>s.id!==id);schedule=schedule.filter(s=>!(s.sectionIds&&s.sectionIds.length===1&&s.sectionIds[0]===id));schedule.forEach(s=>{if(s.sectionIds)s.sectionIds=s.sectionIds.filter(x=>x!==id);});saveAll();renderSections();updateGlobal();}
+
+// ================================================================
+// COURSES / FACULTY / ROOMS
+// ================================================================
+function renderCourses(){
+  document.getElementById('tb-courses').innerHTML=courses.map(c=>{
+    const cnt=schedule.filter(s=>s.courseId===c.id).length;
+    return`<tr><td><span class="tag t-blue">${c.code}</span></td><td style="font-family:'Syne',sans-serif;font-weight:700">${c.name}</td><td>${c.credits||'—'}</td><td>${c.dept||'—'}</td><td>${cnt}</td><td><button class="btn btn-danger btn-sm" onclick="delCourse('${c.id}')">Delete</button></td></tr>`;
+  }).join('');
+}
+function saveCourse(){
+  const code=document.getElementById('nc-code').value.trim(),name=document.getElementById('nc-name').value.trim();
+  const err=document.getElementById('nc-err');if(!code||!name){err.style.display='block';err.textContent='Code & Name required.';return;}
+  err.style.display='none';
+  courses.push({id:'c'+Date.now(),code,name,credits:parseInt(document.getElementById('nc-credits').value)||3,dept:document.getElementById('nc-dept').value.trim()});
+  ['nc-code','nc-name','nc-credits','nc-dept'].forEach(i=>document.getElementById(i).value='');
+  saveAll();
+  closeM('m-course');renderCourses();
+}
+function delCourse(id){courses=courses.filter(c=>c.id!==id);schedule=schedule.filter(s=>s.courseId!==id);saveAll();renderCourses();updateGlobal();}
+
+function renderFacultyPage(){
+  document.getElementById('tb-faculty').innerHTML=faculty.map(f=>{
+    const myS=schedule.filter(s=>s.facultyId===f.id).length;
+    const myCl=getClashes().filter(c=>c.type==='FACULTY'&&c.ids.some(id=>{const sl=schedule.find(x=>x.id===id);return sl&&sl.facultyId===f.id;})).length;
+    return`<tr><td style="font-family:'Syne',sans-serif;font-weight:700">${f.name}</td><td>${f.dept||'—'}</td><td style="font-size:10px;color:var(--mu)">${f.email||'—'}</td><td>${myS}</td><td>${myCl?`<span class="tag t-clash">⚠ ${myCl}</span>`:'<span class="tag t-ok">None</span>'}</td><td><button class="btn btn-ghost btn-sm" onclick="goToFacTT('${f.id}')">View TT</button> <button class="btn btn-danger btn-sm" onclick="delFaculty('${f.id}')">Remove</button></td></tr>`;
+  }).join('');
+}
+function goToFacTT(id){
+  goTo('faculty-tt');
+  setFView('single');
+  document.getElementById('fac-pick').value=id;
+  renderFacultyTT();
+}
+function saveFaculty(){
+  const name=document.getElementById('nf-name').value.trim();
+  const err=document.getElementById('nf-err');if(!name){err.style.display='block';err.textContent='Name required.';return;}
+  err.style.display='none';
+  faculty.push({id:'f'+Date.now(),name,dept:document.getElementById('nf-dept').value.trim(),email:document.getElementById('nf-email').value.trim()});
+  ['nf-name','nf-dept','nf-email'].forEach(i=>document.getElementById(i).value='');
+  saveAll();
+  closeM('m-faculty');renderFacultyPage();
+}
+function delFaculty(id){faculty=faculty.filter(f=>f.id!==id);schedule=schedule.filter(s=>s.facultyId!==id);saveAll();renderFacultyPage();updateGlobal();}
+
+function renderRooms(){
+  document.getElementById('tb-rooms').innerHTML=rooms.map(r=>{
+    const cnt=schedule.filter(s=>s.room===r.id).length;
+    const maxStr=Math.max(0,...schedule.filter(s=>s.room===r.id).map(s=>s.strength||0));
+    const over=maxStr>r.capacity;
+    return`<tr><td style="font-family:'Syne',sans-serif;font-weight:700">${r.id}</td><td><span class="tag t-purple">${r.type}</span></td><td>${r.capacity||'—'}</td><td>${cnt}</td><td>${over?`<span class="tag t-clash">⚠ Overcapacity (${maxStr})</span>`:'<span class="tag t-ok">OK</span>'}</td><td><button class="btn btn-danger btn-sm" onclick="delRoom('${r.id}')">Remove</button></td></tr>`;
+  }).join('');
+}
+function saveRoom(){
+  const id=document.getElementById('nr-id').value.trim();
+  const err=document.getElementById('nr-err');if(!id){err.style.display='block';err.textContent='Room ID required.';return;}
+  if(rooms.find(r=>r.id===id)){err.style.display='block';err.textContent='Already exists.';return;}
+  err.style.display='none';
+  rooms.push({id,type:document.getElementById('nr-type').value,capacity:parseInt(document.getElementById('nr-cap').value)||0});
+  ['nr-id','nr-cap'].forEach(i=>document.getElementById(i).value='');saveAll();closeM('m-room');renderRooms();
+}
+function delRoom(id){rooms=rooms.filter(r=>r.id!==id);schedule=schedule.filter(s=>s.room!==id);saveAll();renderRooms();updateGlobal();}
+function delClass(id){schedule=schedule.filter(s=>s.id!==id);saveAll();renderTT(schedule);updateGlobal();}
+
+// ================================================================
+// EXCEL IMPORT
+// ================================================================
+const DAY_MAP={monday:'Mon',tuesday:'Tue',wednesday:'Wed',thursday:'Thu',friday:'Fri',saturday:'Sat',sunday:'Sun',mon:'Mon',tue:'Tue',wed:'Wed',thu:'Thu',fri:'Fri',sat:'Sat',sun:'Sun'};
+function normalizeTime(t){
+  if(!t)return null;t=String(t).trim();
+  if(!isNaN(t)&&parseFloat(t)<1){const m=Math.round(parseFloat(t)*24*60);const h=Math.floor(m/60);return`${String(h).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`;}
+  const m=t.match(/^(\d{1,2}):(\d{2})$/);if(m)return`${String(parseInt(m[1])).padStart(2,'0')}:${m[2]}`;
+  return null;
+}
+function handleXL(e){
+  const file=e.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    const data=new Uint8Array(ev.target.result);
+    const wb=XLSX.read(data,{type:'array'});
+    const ws=wb.Sheets[wb.SheetNames[0]];
+    const rows=XLSX.utils.sheet_to_json(ws,{defval:''});
+    processXL(rows);
+  };reader.readAsArrayBuffer(file);
+}
+const uz=document.getElementById('upload-zone');
+uz.addEventListener('dragover',e=>{e.preventDefault();uz.classList.add('drag');});
+uz.addEventListener('dragleave',()=>uz.classList.remove('drag'));
+uz.addEventListener('drop',e=>{e.preventDefault();uz.classList.remove('drag');const f=e.dataTransfer.files[0];if(f){const dt=new DataTransfer();dt.items.add(f);document.getElementById('xl-input').files=dt.files;handleXL({target:{files:[f]}});}});
+
+function processXL(rows){
+  xlData=[];
+  const hmap={'course code':'courseCode','course name':'courseName','faculty name':'facultyName','room':'room','day':'day','start time':'start','end time':'end','section/batch':'section','section':'section','batch':'section','department':'dept','credits':'credits','strength':'strength','student strength':'strength','merged':'isMerged'};
+  rows.forEach((row,i)=>{
+    const r={};Object.entries(row).forEach(([k,v])=>{const nk=hmap[k.toLowerCase().trim()];if(nk)r[nk]=String(v).trim();});
+    if(!r.courseCode&&!r.courseName&&!r.facultyName)return;
+    const errors=[];
+    const day=DAY_MAP[(r.day||'').toLowerCase()];if(!day)errors.push('Invalid day');
+    const start=normalizeTime(r.start);if(!start)errors.push('Invalid start');
+    const end=normalizeTime(r.end);if(!end)errors.push('Invalid end');
+    if(start&&end&&start>=end)errors.push('Start≥End');
+    if(!r.courseCode&&!r.courseName)errors.push('Missing course');
+    if(!r.facultyName)errors.push('Missing faculty');
+    if(!r.room)errors.push('Missing room');
+    xlData.push({...r,day,start,end,rowNum:i+2,errors,valid:errors.length===0});
+  });
+  showXLPreview();
+}
+function showXLPreview(){
+  if(!xlData.length){document.getElementById('xl-preview').style.display='none';return;}
+  document.getElementById('xl-preview').style.display='block';
+  document.getElementById('xl-err').style.display='none';document.getElementById('xl-ok').style.display='none';
+  const valid=xlData.filter(r=>r.valid).length,invalid=xlData.filter(r=>!r.valid).length;
+  document.getElementById('xl-summary').innerHTML=`
+    <div class="is-item"><div class="is-num" style="color:var(--ac)">${xlData.length}</div><div class="scl">Total</div></div>
+    <div class="is-item"><div class="is-num" style="color:var(--ok)">${valid}</div><div class="scl">Valid</div></div>
+    <div class="is-item"><div class="is-num" style="color:var(--danger)">${invalid}</div><div class="scl">Errors</div></div>`;
+  const preview=xlData.slice(0,20);
+  document.getElementById('xl-table').innerHTML=`<thead><tr><th>Row</th><th>Course</th><th>Faculty</th><th>Room</th><th>Section</th><th>Day</th><th>Time</th><th>Strength</th><th>Status</th></tr></thead>
+  <tbody>${preview.map(r=>`<tr class="${r.valid?'':'row-bad'}">
+    <td style="color:var(--mu)">${r.rowNum}</td>
+    <td><strong>${r.courseName||r.courseCode||'?'}</strong></td>
+    <td>${r.facultyName||'?'}</td><td>${r.room||'?'}</td><td>${r.section||'—'}</td>
+    <td>${r.day||'?'}</td><td>${r.start||'?'}–${r.end||'?'}</td>
+    <td>${r.strength||'—'}</td>
+    <td>${r.valid?'<span style="color:var(--ok)">✓</span>':`<span style="color:var(--warn);font-size:10px">${r.errors.join(', ')}</span>`}</td>
+  </tr>`).join('')}</tbody>`;
+}
+function doImport(keepClashes=false){
+  let imported=0;
+  xlData.filter(r=>r.valid).forEach(r=>{
+    let co=courses.find(c=>c.code===r.courseCode||c.name===r.courseName);
+    if(!co){co={id:'c'+Date.now()+Math.random(),code:r.courseCode||'?',name:r.courseName||r.courseCode||'?',credits:parseInt(r.credits)||3,dept:r.dept||''};courses.push(co);}
+    let fa=faculty.find(f=>f.name.toLowerCase()===r.facultyName.toLowerCase());
+    if(!fa){fa={id:'f'+Date.now()+Math.random(),name:r.facultyName,dept:r.dept||'',email:''};faculty.push(fa);}
+    if(!rooms.find(rm=>rm.id===r.room))rooms.push({id:r.room,type:'Classroom',capacity:60});
+    let sec=sections.find(s=>s.name.toLowerCase()===(r.section||'').toLowerCase());
+    if(!sec&&r.section){sec={id:'s'+Date.now()+Math.random(),name:r.section,dept:r.dept||'',strength:parseInt(r.strength)||0};sections.push(sec);}
+    const ns={id:nid++,courseId:co.id,facultyId:fa.id,room:r.room,sectionIds:sec?[sec.id]:[],day:r.day,start:r.start,end:r.end,strength:parseInt(r.strength)||sec?.strength||0,batch:'',isMerged:false};
+    schedule.push(ns);imported++;
+  });
+  if(!keepClashes){const cids=getClashedIds();schedule=schedule.filter(s=>!cids.has(s.id)||s.id<nid-imported);}
+  xlData=[];document.getElementById('xl-preview').style.display='none';document.getElementById('xl-input').value='';
+  const ok=document.getElementById('xl-ok');ok.style.display='block';ok.textContent=`✓ Imported ${imported} classes.`;
+  saveAll();updateGlobal();renderTT(schedule);
+}
+function cancelImport(){xlData=[];document.getElementById('xl-preview').style.display='none';document.getElementById('xl-input').value='';}
+
+// Template download
+document.getElementById('dl-template').addEventListener('click',function(e){
+  e.preventDefault();
+  const csv=['Course Code,Course Name,Faculty Name,Room,Day,Start Time,End Time,Section/Batch,Department,Credits,Strength',
+    'CS301,Data Structures,Dr. Priya Sharma,R101,Mon,09:00,10:00,CS-A,Computer Science,4,62',
+    'MA201,Mathematics III,Prof. Rakesh Mehta,R102,Mon,10:00,11:00,CS-A,Mathematics,3,62',
+    'CS302,Operating Systems,Dr. Suresh Rao,Lab-A,Tue,09:00,11:00,CS-B,Computer Science,4,58'].join('\n');
+  const blob=new Blob([csv],{type:'text/csv'});const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download='timetable-template.csv';a.click();URL.revokeObjectURL(url);
+});
+
+// ================================================================
+// MODAL HELPERS
+// ================================================================
+function openM(id){document.getElementById(id).classList.add('open');}
+function closeM(id){document.getElementById(id).classList.remove('open');}
+document.querySelectorAll('.mb').forEach(el=>el.addEventListener('click',e=>{if(e.target===el)el.classList.remove('open');}));
+
+// ================================================================
+// SUGGESTION ENGINE
+// ================================================================
+
+// Get all rooms free at a given day+start+end (excluding a specific room)
+function getFreeRoomsAt(day, start, end, excludeRoom, neededStrength){
+  return rooms.filter(r=>{
+    if(r.id === excludeRoom) return false;
+    const busy = schedule.some(s => s.room===r.id && s.day===day && overlap(s.start,s.end,start,end));
+    if(busy) return false;
+    if(neededStrength && r.capacity && r.capacity < neededStrength) return false;
+    return true;
+  });
+}
+
+// Get free time slots for a faculty on a given day (not overlapping any of their classes)
+function getFreeTimesForFaculty(facultyId, day){
+  const busy = schedule.filter(s=>s.facultyId===facultyId && s.day===day);
+  return timeSlots.filter(ts => !busy.some(s=>overlap(s.start,s.end,ts.start,ts.end)));
+}
+
+// Get free time slots for a room on a given day
+function getFreeTimesForRoom(roomId, day){
+  const busy = schedule.filter(s=>s.room===roomId && s.day===day);
+  return timeSlots.filter(ts => !busy.some(s=>overlap(s.start,s.end,ts.start,ts.end)));
+}
+
+// Core: for a given clashObject + triggering slotId, compute suggestions
+function computeSuggestions(clash, triggerId){
+  const slot = schedule.find(s=>s.id===triggerId);
+  if(!slot) return {freeRooms:[], altTimes:[], altDays:[]};
+
+  const str = slot.strength||0;
+  const freeRooms = getFreeRoomsAt(slot.day, slot.start, slot.end, slot.room, str);
+
+  // Alt times on same day where BOTH the slot's faculty AND the clashing room are free
+  const facBusy = schedule.filter(s=>s.facultyId===slot.facultyId && s.day===slot.day && s.id!==slot.id);
+  const roomBusy = schedule.filter(s=>s.room===slot.room && s.day===slot.day && s.id!==slot.id);
+  const altTimes = timeSlots.filter(ts=>{
+    const facFree  = !facBusy.some(s=>overlap(s.start,s.end,ts.start,ts.end));
+    const roomFree = !roomBusy.some(s=>overlap(s.start,s.end,ts.start,ts.end));
+    const notSame  = ts.start !== slot.start;
+    return facFree && roomFree && notSame;
+  }).slice(0,4);
+
+  // Alt days: find days where faculty & room are both free at same time window
+  const altDays = DAYS.filter(d=>{
+    if(d===slot.day) return false;
+    const fac = schedule.filter(s=>s.facultyId===slot.facultyId && s.day===d);
+    const rm  = schedule.filter(s=>s.room===slot.room && s.day===d);
+    const facFree = !fac.some(s=>overlap(s.start,s.end,slot.start,slot.end));
+    const rmFree  = !rm.some(s=>overlap(s.start,s.end,slot.start,slot.end));
+    return facFree && rmFree;
+  }).slice(0,4);
+
+  return {freeRooms, altTimes, altDays, slot};
+}
+
+// Show the clash modal enriched with room suggestions
+function showClashWithSuggestions(clash, triggerId){
+  const slot = schedule.find(s=>s.id===triggerId);
+  const {freeRooms, altTimes, altDays} = computeSuggestions(clash, triggerId);
+
+  document.getElementById('mc-b').innerHTML =
+    `<strong>${clash.type} CLASH</strong> — ${clash.msg}`;
+  document.getElementById('mc-m').innerHTML =
+    `<div class="mr"><span class="mk">Conflict</span><span class="mv">${clash.detail}</span></div>
+     <div class="mr"><span class="mk">Type</span><span class="mv">${clash.type} CLASH</span></div>
+     ${slot?`<div class="mr"><span class="mk">Slot</span><span class="mv">${slot.day} ${slot.start}–${slot.end} · ${slot.room}</span></div>`:''}`;
+
+  const suggWrap = document.getElementById('mc-sugg-wrap');
+  const noSugg   = document.getElementById('mc-no-sugg');
+  const suggList = document.getElementById('mc-sugg-list');
+
+  if(freeRooms.length===0 && altTimes.length===0 && altDays.length===0){
+    suggWrap.style.display='none'; noSugg.style.display='block';
+  } else {
+    noSugg.style.display='none'; suggWrap.style.display='block';
+    let html='';
+
+    if(freeRooms.length){
+      html+=`<div style="font-family:'Syne',sans-serif;font-size:10px;font-weight:700;color:var(--ok);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">🏫 Free Rooms — Same Time</div>`;
+      html+=freeRooms.map(r=>{
+        const pct = slot&&r.capacity&&slot.strength ? Math.round(slot.strength/r.capacity*100) : null;
+        const capColor = pct===null?'var(--mu)': pct>100?'var(--danger)':pct>80?'var(--warn)':'var(--ok)';
+        return `<div class="clash-sugg-item">
+          <div class="csi-room">${r.id}</div>
+          <div class="csi-info">
+            <strong>${r.type}</strong> · cap ${r.capacity}
+            ${pct!==null?`<span style="color:${capColor}"> · ${pct}% full</span>`:''}
+            <br>Free on <strong>${slot?slot.day:''} ${slot?slot.start:''}</strong>
+          </div>
+          <button class="btn btn-success btn-sm" onclick="applyRoomSuggestion(${triggerId},'${r.id}')">
+            Move Here
+          </button>
+        </div>`;
+      }).join('');
+    }
+
+    if(altTimes.length){
+      html+=`<div style="font-family:'Syne',sans-serif;font-size:10px;font-weight:700;color:var(--ac);text-transform:uppercase;letter-spacing:1px;margin:10px 0 6px">⏱ Alt Times — Same Day &amp; Room</div>`;
+      html+=altTimes.map(ts=>`<div class="clash-sugg-item" style="border-color:rgba(79,142,247,.25)">
+        <div class="csi-room" style="color:var(--ac)">${ts.start}</div>
+        <div class="csi-info">Same day, same room <br><strong>${slot?slot.day:''} · ${slot?slot.room:''}</strong></div>
+        <button class="btn btn-primary btn-sm" onclick="applyTimeSuggestion(${triggerId},'${ts.start}','${ts.end}')">
+          Reschedule
+        </button>
+      </div>`).join('');
+    }
+
+    if(altDays.length){
+      html+=`<div style="font-family:'Syne',sans-serif;font-size:10px;font-weight:700;color:var(--ac2);text-transform:uppercase;letter-spacing:1px;margin:10px 0 6px">📅 Alt Days — Same Time &amp; Room</div>`;
+      html+=altDays.map(d=>`<div class="clash-sugg-item" style="border-color:rgba(124,92,252,.25)">
+        <div class="csi-room" style="color:var(--ac2)">${d}</div>
+        <div class="csi-info">Faculty &amp; room both free<br><strong>${slot?slot.start:''}–${slot?slot.end:''} · ${slot?slot.room:''}</strong></div>
+        <button class="btn btn-sm" style="background:rgba(124,92,252,.15);border:1px solid rgba(124,92,252,.35);color:var(--ac2)" onclick="applyDaySuggestion(${triggerId},'${d}')">
+          Move to ${d}
+        </button>
+      </div>`).join('');
+    }
+    suggList.innerHTML = html;
+  }
+  openM('m-clash');
+}
+
+// One-click apply a room suggestion
+function applyRoomSuggestion(slotId, newRoom){
+  const s = schedule.find(x=>x.id===slotId); if(!s) return;
+  s.room = newRoom;
+  saveAll();
+  closeM('m-clash');
+  renderTT(schedule); updateGlobal();
+  // Check if still clashing
+  const stillClash = getClashes().filter(c=>c.ids.includes(slotId));
+  if(stillClash.length) showClashWithSuggestions(stillClash[0], slotId);
+  else showToast(`✓ Moved to ${newRoom} — clash resolved!`, 'ok');
+}
+
+// One-click apply a time suggestion
+function applyTimeSuggestion(slotId, newStart, newEnd){
+  const s = schedule.find(x=>x.id===slotId); if(!s) return;
+  s.start = newStart; s.end = newEnd;
+  saveAll();
+  closeM('m-clash');
+  renderTT(schedule); updateGlobal();
+  const stillClash = getClashes().filter(c=>c.ids.includes(slotId));
+  if(stillClash.length) showClashWithSuggestions(stillClash[0], slotId);
+  else showToast(`✓ Rescheduled to ${newStart} — clash resolved!`, 'ok');
+}
+
+// One-click apply a day suggestion
+function applyDaySuggestion(slotId, newDay){
+  const s = schedule.find(x=>x.id===slotId); if(!s) return;
+  s.day = newDay;
+  saveAll();
+  closeM('m-clash');
+  renderTT(schedule); updateGlobal();
+  const stillClash = getClashes().filter(c=>c.ids.includes(slotId));
+  if(stillClash.length) showClashWithSuggestions(stillClash[0], slotId);
+  else showToast(`✓ Moved to ${newDay} — clash resolved!`, 'ok');
+}
+
+// Toast notification
+function showToast(msg, type='ok'){
+  const t = document.createElement('div');
+  t.style.cssText=`position:fixed;bottom:24px;right:24px;z-index:9999;padding:12px 20px;border-radius:10px;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;animation:popIn .25s ease;box-shadow:0 8px 32px rgba(0,0,0,.4);`;
+  t.style.background = type==='ok'?'rgba(79,209,142,.15)':'rgba(247,95,95,.15)';
+  t.style.border = type==='ok'?'1px solid rgba(79,209,142,.4)':'1px solid rgba(247,95,95,.4)';
+  t.style.color = type==='ok'?'#4fd18e':'#f75f5f';
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(()=>t.remove(), 3200);
+}
+
+// ================================================================
+// FULL SUGGESTIONS PAGE
+// ================================================================
+function renderSuggestions(){
+  const clashes = getClashes();
+  const el = document.getElementById('sugg-content');
+
+  if(clashes.length===0){
+    el.innerHTML=`
+      <div class="no-clash-banner">
+        <div class="ncb-ico">✅</div>
+        <div class="ncb-title">No Clashes Found!</div>
+        <div style="color:var(--mu);font-size:12px;margin-top:6px">Your timetable is fully conflict-free. Great work!</div>
+      </div>
+      ${renderProactiveSuggestions()}`;
+    return;
+  }
+
+  // Build per-clash suggestion blocks
+  let html = `<div style="margin-bottom:20px">
+    <div class="sugg-section-title">⚠️ Active Clashes (${clashes.length})</div>
+    <div style="font-size:12px;color:var(--mu);margin-bottom:14px">Each clash below comes with actionable fix suggestions. Click any fix to apply it instantly.</div>
+  </div>`;
+
+  // Deduplicate — show each unique clash once
+  const seen = new Set();
+  clashes.forEach(clash=>{
+    const key = clash.ids.slice().sort().join('-');
+    if(seen.has(key)) return; seen.add(key);
+
+    const triggerId = clash.ids[0];
+    const slot = schedule.find(s=>s.id===triggerId);
+    if(!slot) return;
+    const {freeRooms, altTimes, altDays} = computeSuggestions(clash, triggerId);
+    const co = getCo(slot.courseId), fa = getFa(slot.facultyId);
+
+    html += `<div style="background:var(--sf);border:1px solid var(--bd);border-radius:13px;padding:18px;margin-bottom:16px;">
+      <!-- Clash header -->
+      <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:14px;">
+        <div style="width:40px;height:40px;border-radius:9px;background:rgba(247,95,95,.1);border:1px solid rgba(247,95,95,.28);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">⚠️</div>
+        <div style="flex:1">
+          <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:14px;margin-bottom:3px">${clash.type} CLASH</div>
+          <div style="font-size:12px;color:var(--mu)">${clash.msg}</div>
+          <div style="font-size:11px;color:var(--mu);margin-top:3px">${clash.detail}</div>
+        </div>
+        <span class="tag ${clash.type==='ROOM'?'t-clash':'t-warn'}">${clash.type==='ROOM'?'🏫 Room':'👤 Faculty'}</span>
+      </div>
+
+      <!-- Involved slot info -->
+      <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
+        <span class="tag t-blue">${co.name}</span>
+        <span class="tag t-purple">${secNames(slot.sectionIds)}</span>
+        <span class="tag" style="background:rgba(107,120,152,.1);color:var(--mu);border:1px solid var(--bd)">${slot.day} ${slot.start}–${slot.end}</span>
+        <span class="tag t-blue">${slot.room}</span>
+        ${slot.strength?`<span class="tag t-warn">👥 ${slot.strength}</span>`:''}
+      </div>
+
+      <!-- Fix suggestions -->
+      <div style="font-family:'Syne',sans-serif;font-size:10px;font-weight:700;color:var(--ok);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">💡 Fix Suggestions</div>
+
+      ${freeRooms.length===0 && altTimes.length===0 && altDays.length===0 ? `
+        <div style="background:rgba(247,162,79,.07);border:1px solid rgba(247,162,79,.25);border-radius:8px;padding:10px 12px;font-size:11px;color:var(--warn)">
+          ⚠ No immediate fixes available. All rooms are occupied at this time. Consider adding a new room or a new time slot.
+        </div>` : ''}
+
+      ${freeRooms.length?`
+        <div style="font-size:10px;color:var(--ok);font-family:'Syne',sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">🏫 Move to a Free Room (Same Time)</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:7px;margin-bottom:12px">
+          ${freeRooms.map(r=>{
+            const pct = slot.strength&&r.capacity?Math.round(slot.strength/r.capacity*100):null;
+            const capColor = pct===null?'var(--mu)':pct>100?'var(--danger)':pct>80?'var(--warn)':'var(--ok)';
+            return `<div style="background:rgba(79,209,142,.06);border:1px solid rgba(79,209,142,.22);border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;gap:5px">
+              <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:16px;color:var(--ok)">${r.id}</div>
+              <div style="font-size:10px;color:var(--mu)">${r.type} · cap ${r.capacity}${pct!==null?` · <span style="color:${capColor}">${pct}% full</span>`:''}</div>
+              <button class="btn btn-success btn-sm" style="margin-top:4px" onclick="applyRoomSuggestion(${triggerId},'${r.id}');renderSuggestions()">✓ Move Here</button>
+            </div>`;
+          }).join('')}
+        </div>`:'' }
+
+      ${altTimes.length?`
+        <div style="font-size:10px;color:var(--ac);font-family:'Syne',sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">⏱ Reschedule — Same Day &amp; Room</div>
+        <div style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:12px">
+          ${altTimes.map(ts=>`<button class="btn btn-primary btn-sm" onclick="applyTimeSuggestion(${triggerId},'${ts.start}','${ts.end}');renderSuggestions()">
+            ${ts.start}–${ts.end}
+          </button>`).join('')}
+        </div>`:'' }
+
+      ${altDays.length?`
+        <div style="font-size:10px;color:var(--ac2);font-family:'Syne',sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">📅 Move to Another Day (Same Time &amp; Room)</div>
+        <div style="display:flex;flex-wrap:wrap;gap:7px">
+          ${altDays.map(d=>`<button class="btn btn-sm" style="background:rgba(124,92,252,.15);border:1px solid rgba(124,92,252,.35);color:var(--ac2)" onclick="applyDaySuggestion(${triggerId},'${d}');renderSuggestions()">
+            ${d}
+          </button>`).join('')}
+        </div>`:'' }
+    </div>`;
+  });
+
+  html += renderProactiveSuggestions();
+  el.innerHTML = html;
+}
+
+// Proactive suggestions even when no clashes: overcapacity, underutilised rooms, etc.
+function renderProactiveSuggestions(){
+  let html = `<div class="sugg-section-title" style="margin-top:20px">🔎 Proactive Insights</div>`;
+  let count = 0;
+
+  // Overcapacity warnings
+  schedule.forEach(s=>{
+    const rm = getRm(s.room);
+    if(rm.capacity && s.strength && s.strength > rm.capacity){
+      count++;
+      const freeRooms = getFreeRoomsAt(s.day, s.start, s.end, s.room, s.strength);
+      html += `<div class="sugg-card sugg-warn" style="margin-bottom:8px">
+        <div class="sugg-icon si-warn">🏛</div>
+        <div class="sugg-body">
+          <div class="sugg-title">Overcapacity: ${s.room}</div>
+          <div class="sugg-desc">${getCo(s.courseId).name} — <strong>${s.strength} students</strong> in a room capped at <strong>${rm.capacity}</strong>. ${freeRooms.length?`<span style="color:var(--ok)">${freeRooms.length} larger room${freeRooms.length>1?'s':''} available: ${freeRooms.map(r=>r.id).join(', ')}</span>`:'No larger rooms free at this time.'}</div>
+          <div class="sugg-tags">${freeRooms.slice(0,3).map(r=>`<button class="btn btn-success btn-sm" onclick="applyRoomSuggestion(${s.id},'${r.id}');renderSuggestions()">→ ${r.id} (cap ${r.capacity})</button>`).join('')}</div>
+        </div>
+      </div>`;
+    }
+  });
+
+  // Faculty with heavy load (>5 classes/week)
+  faculty.forEach(f=>{
+    const cnt = schedule.filter(s=>s.facultyId===f.id).length;
+    if(cnt>5){ count++;
+      html += `<div class="sugg-card sugg-warn" style="margin-bottom:8px">
+        <div class="sugg-icon si-warn">👩‍🏫</div>
+        <div class="sugg-body">
+          <div class="sugg-title">Heavy Workload: ${f.name}</div>
+          <div class="sugg-desc">Assigned <strong>${cnt} classes/week</strong>. Consider redistributing some classes to another faculty member.</div>
+        </div>
+      </div>`;
+    }
+  });
+
+  // Rooms that are always free (0 bookings)
+  rooms.forEach(r=>{
+    const cnt = schedule.filter(s=>s.room===r.id).length;
+    if(cnt===0){ count++;
+      html += `<div class="sugg-card" style="margin-bottom:8px;border-color:rgba(107,120,152,.2)">
+        <div class="sugg-icon" style="background:rgba(107,120,152,.1);border-color:rgba(107,120,152,.2)">🚪</div>
+        <div class="sugg-body">
+          <div class="sugg-title">Unused Room: ${r.id}</div>
+          <div class="sugg-desc">${r.id} (${r.type}, cap ${r.capacity}) has no classes scheduled this week.</div>
+        </div>
+      </div>`;
+    }
+  });
+
+  if(count===0){
+    html += `<div style="background:rgba(79,209,142,.06);border:1px solid rgba(79,209,142,.18);border-radius:10px;padding:14px 16px;font-size:12px;color:var(--mu)">
+      <strong style="color:var(--ok)">✓ All good!</strong> No capacity issues, overloaded faculty, or unused rooms detected.
+    </div>`;
+  }
+
+  return html;
+}
+
+// ================================================================
+// HEADER CHIPS & INFO BANNERS
+// ================================================================
+function updateHeaderChips(type, val){
+  // Hide all chips first
+  ['hdr-faculty-chip','hdr-section-chip','hdr-room-chip'].forEach(id=>{
+    document.getElementById(id).style.display='none';
+    document.getElementById(id).textContent='';
+  });
+  if(type==='faculty'&&val){
+    const f=getFa(val);
+    const el=document.getElementById('hdr-faculty-chip');
+    el.textContent='👤 '+f.name; el.style.display='block';
+  } else if(type==='section'&&val){
+    const s=getSec(val);
+    const el=document.getElementById('hdr-section-chip');
+    el.textContent='🏷 Section: '+s.name; el.style.display='block';
+    if(s.dept){
+      const rd=document.getElementById('hdr-room-chip');
+      rd.textContent='🏛 '+s.dept; rd.style.display='block';
+    }
+  } else if(type==='room'&&val){
+    const r=getRm(val);
+    const el=document.getElementById('hdr-room-chip');
+    el.textContent='🚪 '+r.id+' · '+r.type; el.style.display='block';
+  }
+}
+
+function updateWeekBanner(type, val){
+  const banner=document.getElementById('tt-week-banner');
+  const ico=document.getElementById('tt-week-banner-ico');
+  const title=document.getElementById('tt-week-banner-title');
+  const sub=document.getElementById('tt-week-banner-sub');
+  const tags=document.getElementById('tt-week-banner-tags');
+  if(type==='all'||!val){
+    banner.classList.remove('visible'); return;
+  }
+  banner.classList.add('visible');
+  if(type==='section'){
+    const s=getSec(val);
+    const cnt=schedule.filter(x=>x.sectionIds&&x.sectionIds.includes(val)).length;
+    ico.textContent='🏷'; title.textContent='Section: '+s.name;
+    sub.textContent=(s.dept||'')+(s.strength?' · 👥 '+s.strength+' students':'');
+    tags.innerHTML=`<span class="tag t-blue">${cnt} classes/wk</span>`;
+    updateHeaderChips('section',val);
+  } else if(type==='faculty'){
+    const f=getFa(val);
+    const cnt=schedule.filter(x=>x.facultyId===val).length;
+    const cl=getClashes().filter(c=>c.type==='FACULTY'&&c.ids.some(id=>{const sl=schedule.find(x=>x.id===id);return sl&&sl.facultyId===val;})).length;
+    ico.textContent='👤'; title.textContent=f.name;
+    sub.textContent=(f.dept||'')+(f.email?' · '+f.email:'');
+    tags.innerHTML=`<span class="tag t-blue">${cnt} classes/wk</span>${cl?`<span class="tag t-clash">⚠ ${cl} clash${cl>1?'es':''}</span>`:'<span class="tag t-ok">No clashes</span>'}`;
+    updateHeaderChips('faculty',val);
+  } else if(type==='room'){
+    const r=getRm(val);
+    const cnt=schedule.filter(x=>x.room===val).length;
+    ico.textContent='🚪'; title.textContent='Room: '+r.id;
+    sub.textContent=r.type+' · Capacity: '+r.capacity;
+    tags.innerHTML=`<span class="tag t-blue">${cnt} classes/wk</span>`;
+    updateHeaderChips('room',val);
+  }
+}
+
+function updateSectionBanner(){
+  const secId=document.getElementById('sec-pick')?.value;
+  if(!secId||document.getElementById('sv-btn-all').classList.contains('active')){
+    document.getElementById('tt-sec-banner').classList.remove('visible'); return;
+  }
+  const s=getSec(secId);
+  const cnt=schedule.filter(x=>x.sectionIds&&x.sectionIds.includes(secId)).length;
+  const cl=getClashes().filter(c=>c.ids.some(id=>{const sl=schedule.find(x=>x.id===id);return sl&&sl.sectionIds&&sl.sectionIds.includes(secId);})).length;
+  document.getElementById('tt-sec-banner').classList.add('visible');
+  document.getElementById('tt-sec-banner-title').textContent='Section: '+s.name;
+  document.getElementById('tt-sec-banner-sub').textContent=(s.dept||'')+(s.strength?' · 👥 '+s.strength+' students':'');
+  document.getElementById('tt-sec-banner-tags').innerHTML=
+    `<span class="tag t-blue">${cnt} classes/wk</span>${cl?`<span class="tag t-clash">⚠ ${cl} clash${cl>1?'es':''}</span>`:'<span class="tag t-ok">No clashes</span>'}`;
+  // Update header chip
+  const chip=document.getElementById('hdr-section-chip');
+  chip.textContent='🏷 '+s.name; chip.style.display='block';
+  const rc=document.getElementById('hdr-room-chip');
+  if(s.dept){rc.textContent='🏛 '+s.dept;rc.style.display='block';}
+}
+
+function updateFacultyBanner(){
+  const facId=document.getElementById('fac-pick')?.value;
+  if(!facId||document.getElementById('fv-btn-cards').classList.contains('active')){
+    document.getElementById('tt-fac-banner').classList.remove('visible');
+    ['hdr-faculty-chip','hdr-section-chip','hdr-room-chip'].forEach(id=>document.getElementById(id).style.display='none');
+    return;
+  }
+  const f=getFa(facId);
+  const cnt=schedule.filter(x=>x.facultyId===facId).length;
+  const cl=getClashes().filter(c=>c.type==='FACULTY'&&c.ids.some(id=>{const sl=schedule.find(x=>x.id===id);return sl&&sl.facultyId===facId;})).length;
+  document.getElementById('tt-fac-banner').classList.add('visible');
+  document.getElementById('tt-fac-banner-title').textContent=f.name;
+  document.getElementById('tt-fac-banner-sub').textContent=(f.dept||'')+(f.email?' · '+f.email:'');
+  document.getElementById('tt-fac-banner-tags').innerHTML=
+    `<span class="tag t-blue">${cnt} classes/wk</span>${cl?`<span class="tag t-clash">⚠ ${cl} clash${cl>1?'es':''}</span>`:'<span class="tag t-ok">No clashes</span>'}`;
+  const chip=document.getElementById('hdr-faculty-chip');
+  chip.textContent='👤 '+f.name; chip.style.display='block';
+  ['hdr-section-chip','hdr-room-chip'].forEach(id=>document.getElementById(id).style.display='none');
+}
+
+// ================================================================
+// DOWNLOAD / EXPORT
+// ================================================================
+function toggleDL(dropId){
+  // Close all other dropdowns
+  document.querySelectorAll('.dl-menu').forEach(m=>{
+    if(m.id!=='dl-menu-'+dropId.replace('dl-drop-','')) m.classList.remove('open');
+  });
+  const menuId='dl-menu-'+dropId.replace('dl-drop-','');
+  document.getElementById(menuId).classList.toggle('open');
+}
+document.addEventListener('click',e=>{
+  if(!e.target.closest('.dl-dropdown')) document.querySelectorAll('.dl-menu').forEach(m=>m.classList.remove('open'));
+});
+
+function getExportData(view){
+  let data=schedule;
+  let label='All Classes';
+  if(view==='section'){
+    const secId=document.getElementById('sec-pick')?.value;
+    if(secId){data=schedule.filter(s=>s.sectionIds&&s.sectionIds.includes(secId));label='Section: '+getSec(secId).name;}
+  } else if(view==='faculty'){
+    const facId=document.getElementById('fac-pick')?.value;
+    if(facId){data=schedule.filter(s=>s.facultyId===facId);label='Faculty: '+getFa(facId).name;}
+  } else if(view==='week'){
+    const type=document.getElementById('tt-ftype')?.value||'all';
+    const val=document.getElementById('tt-fval')?.value;
+    if(type==='section'&&val){data=schedule.filter(s=>s.sectionIds&&s.sectionIds.includes(val));label='Section: '+getSec(val).name;}
+    else if(type==='faculty'&&val){data=schedule.filter(s=>s.facultyId===val);label='Faculty: '+getFa(val).name;}
+    else if(type==='room'&&val){data=schedule.filter(s=>s.room===val);label='Room: '+val;}
+  } else if(view==='room'){
+    label='Room Availability';
+  }
+  return {data, label};
+}
+
+function exportCSV(view){
+  const {data, label}=getExportData(view);
+  const rows=[
+    ['Course Code','Course Name','Faculty','Room','Section(s)','Day','Start','End','Strength','Type','Status'],
+    ...data.map(s=>{
+      const clash=getClashedIds().has(s.id);
+      return [
+        getCo(s.courseId).code, getCo(s.courseId).name,
+        getFa(s.facultyId).name, s.room,
+        secNames(s.sectionIds), s.day, s.start, s.end,
+        s.strength||'', s.isMerged?'Merged':'Regular',
+        clash?'CLASH':'OK'
+      ];
+    })
+  ];
+  const csv=rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url; a.download=`timetable-${label.replace(/[^a-z0-9]/gi,'_').toLowerCase()}.csv`;
+  a.click(); URL.revokeObjectURL(url);
+  document.querySelectorAll('.dl-menu').forEach(m=>m.classList.remove('open'));
+}
+
+function exportExcel(view){
+  const {data,label}=getExportData(view);
+  if(typeof XLSX==='undefined'){alert('XLSX library not loaded.');return;}
+  const rows=[
+    ['Course Code','Course Name','Faculty','Room','Section(s)','Day','Start Time','End Time','Student Strength','Type','Clash Status'],
+    ...data.map(s=>{
+      const clash=getClashedIds().has(s.id);
+      return [
+        getCo(s.courseId).code, getCo(s.courseId).name,
+        getFa(s.facultyId).name, s.room,
+        secNames(s.sectionIds), s.day, s.start, s.end,
+        s.strength||0, s.isMerged?'Merged':'Regular',
+        clash?'CLASH':'OK'
+      ];
+    })
+  ];
+  const ws=XLSX.utils.aoa_to_sheet(rows);
+  // Column widths
+  ws['!cols']=[{wch:12},{wch:26},{wch:22},{wch:10},{wch:16},{wch:8},{wch:10},{wch:10},{wch:14},{wch:10},{wch:12}];
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'Timetable');
+  // Add metadata sheet
+  const meta=XLSX.utils.aoa_to_sheet([
+    ['SmartSchedule Pro — Export'],[''],
+    ['Filter',label],['Total Classes',data.length],
+    ['Exported',new Date().toLocaleString()],
+    ['Clashes',getClashes().length]
+  ]);
+  XLSX.utils.book_append_sheet(wb,meta,'Info');
+  XLSX.writeFile(wb,`timetable-${label.replace(/[^a-z0-9]/gi,'_').toLowerCase()}.xlsx`);
+  document.querySelectorAll('.dl-menu').forEach(m=>m.classList.remove('open'));
+}
+
+function printTT(view){
+  document.querySelectorAll('.dl-menu').forEach(m=>m.classList.remove('open'));
+  // Mark the correct page as print-active
+  document.querySelectorAll('.pg').forEach(p=>p.classList.remove('print-active'));
+  const pageMap={week:'timetable',section:'section-tt',faculty:'faculty-tt',room:'room-finder'};
+  const pageId='page-'+(pageMap[view]||view);
+  document.getElementById(pageId)?.classList.add('print-active','show');
+  // Inject a print header with context info
+  const {label}=getExportData(view);
+  let ph=document.getElementById('__print_header__');
+  if(!ph){ph=document.createElement('div');ph.id='__print_header__';ph.className='print-header';document.body.insertBefore(ph,document.body.firstChild);}
+  ph.innerHTML=`<div style="font-family:Arial,sans-serif;padding:8px 0 12px;border-bottom:2px solid #2563eb;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center">
+    <div>
+      <div style="font-size:16px;font-weight:800;color:#1e3a8a;">Dha Suffa University</div>
+      <div style="font-size:11px;font-weight:600;color:#2563eb;letter-spacing:0.3px;">Smart Timetable Management System</div>
+    </div>
+    <div style="text-align:right;font-size:12px;color:#555">${label} &nbsp;|&nbsp; Printed: ${new Date().toLocaleDateString()}</div>
+  </div>`;
+  setTimeout(()=>{
+    window.print();
+    ph.innerHTML='';
+    document.getElementById(pageId)?.classList.remove('print-active');
+  },120);
+}
+
+// ================================================================
+// DATA MANAGER PAGE
+// ================================================================
+function renderDataMgmt(){
+  try{
+    const raw=localStorage.getItem(SS_KEY);
+    const d=raw?JSON.parse(raw):null;
+    const savedAt=d&&d.savedAt?new Date(d.savedAt).toLocaleString():'Never';
+    const size=raw?Math.round(raw.length/1024*10)/10:0;
+    document.getElementById('dm-save-status').innerHTML=`
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px;">
+        <span style="width:8px;height:8px;border-radius:50%;background:var(--ok);box-shadow:0 0 5px var(--ok)"></span>
+        <span style="color:var(--ok);font-weight:600;font-family:'Syne',sans-serif;font-size:12px;">Auto-save Active</span>
+      </div>
+      <div>Last saved: <strong style="color:var(--txt)">${savedAt}</strong></div>
+      <div>Storage used: <strong style="color:var(--txt)">${size} KB</strong></div>
+      <div style="font-size:10px;color:var(--mu);margin-top:4px;">Saved automatically after every change.</div>`;
+  }catch(e){
+    document.getElementById('dm-save-status').innerHTML='<span style="color:var(--danger)">Storage unavailable</span>';
+  }
+  document.getElementById('dm-summary').innerHTML=`
+    <div>📚 Courses: <strong style="color:var(--ac)">${courses.length}</strong></div>
+    <div>👤 Faculty: <strong style="color:var(--ac2)">${faculty.length}</strong></div>
+    <div>🏷 Sections: <strong style="color:var(--merge)">${sections.length}</strong></div>
+    <div>🚪 Rooms: <strong style="color:var(--ok)">${rooms.length}</strong></div>
+    <div>🗓 Scheduled: <strong style="color:var(--warn)">${schedule.length}</strong> classes</div>
+    <div>⚠ Clashes: <strong style="color:var(--danger)">${getClashes().length}</strong></div>`;
+  // Reset share UI
+  document.getElementById('share-link-box').style.display='none';
+  document.getElementById('qr-box').style.display='none';
+  document.getElementById('share-copy-ok').style.display='none';
+}
+
+// ── SHARE LINK ────────────────────────────────────────────────────
+function buildPayload(){
+  return JSON.stringify({
+    v:1, ts:timeSlots, sec:sections, co:courses,
+    fac:faculty, rm:rooms, sch:schedule, nid
+  });
+}
+
+function compressToBase64(str){
+  // Simple LZ-style compression using built-in btoa + encodeURIComponent
+  try{
+    return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g,(m,p1)=>String.fromCharCode('0x'+p1)));
+  }catch(e){ return btoa(unescape(encodeURIComponent(str))); }
+}
+function decompressFromBase64(b64){
+  try{
+    return decodeURIComponent(Array.from(atob(b64),c=>'%'+('00'+c.charCodeAt(0).toString(16)).slice(-2)).join(''));
+  }catch(e){ return decodeURIComponent(escape(atob(b64))); }
+}
+
+function generateShareLink(){
+  try{
+    const payload=buildPayload();
+    const encoded=compressToBase64(payload);
+    const url=window.location.href.split('?')[0].split('#')[0]+'#data='+encoded;
+    document.getElementById('share-link-input').value=url;
+    const kb=Math.round(encoded.length/1024*10)/10;
+    document.getElementById('share-link-size').textContent=`Link size: ${kb} KB · ${schedule.length} classes · ${faculty.length} faculty`;
+    document.getElementById('share-link-box').style.display='block';
+    document.getElementById('qr-box').style.display='none';
+
+    // Warn if link is very long (>30KB encoded can be risky for some browsers/apps)
+    if(kb>30){
+      document.getElementById('share-link-size').innerHTML+=
+        ' &nbsp;<span style="color:var(--warn)">⚠ Large link — use QR code or JSON backup for best results</span>';
+    }
+  }catch(e){
+    showToast('Could not generate link: '+e.message,'err');
+  }
+}
+
+function copyShareLink(){
+  const inp=document.getElementById('share-link-input');
+  inp.select();
+  try{
+    navigator.clipboard.writeText(inp.value).then(()=>{
+      const ok=document.getElementById('share-copy-ok');
+      ok.style.display='block';
+      ok.textContent='✓ Link copied! Paste it in any browser on any device.';
+      setTimeout(()=>ok.style.display='none',4000);
+    });
+  }catch(e){
+    document.execCommand('copy');
+    const ok=document.getElementById('share-copy-ok');
+    ok.style.display='block';
+    ok.textContent='✓ Copied!';
+  }
+}
+
+// ── QR CODE (pure JS, no library needed) ─────────────────────────
+function generateQR(){
+  generateShareLink();
+  const url=document.getElementById('share-link-input').value;
+  if(!url)return;
+  document.getElementById('qr-box').style.display='block';
+
+  // Use a free QR API (goqr.me) to generate QR from the URL
+  // For large data, we use a data URI approach instead
+  const wrap=document.getElementById('qr-canvas-wrap');
+
+  // If url < 2000 chars, use API; otherwise show instructions
+  if(url.length<2000){
+    const apiUrl=`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(url)}`;
+    wrap.innerHTML=`<img src="${apiUrl}" alt="QR Code" style="width:180px;height:180px;border-radius:4px;" onerror="this.parentElement.innerHTML='<div style=\\'color:var(--warn);font-size:11px;padding:10px;text-align:center;\\'>QR generation requires internet. Use the copy link option instead.</div>'" >`;
+  } else {
+    // Data too large for QR — offer download link approach
+    wrap.innerHTML=`<div style="width:180px;height:180px;display:flex;align-items:center;justify-content:center;background:var(--sf2);border:1px solid var(--bd);border-radius:8px;text-align:center;padding:14px;">
+      <div>
+        <div style="font-size:28px;margin-bottom:8px;">📊</div>
+        <div style="font-size:10px;color:var(--mu);line-height:1.5;">Data too large for QR.<br>Use <strong style="color:var(--txt)">Copy Link</strong> or<br><strong style="color:var(--txt)">JSON Backup</strong> instead.</div>
+      </div>
+    </div>`;
+  }
+}
+
+function downloadQR(){
+  const img=document.querySelector('#qr-canvas-wrap img');
+  if(!img){showToast('No QR to download','err');return;}
+  const a=document.createElement('a');
+  a.href=img.src;
+  a.download='dsu-timetable-qr.png';
+  a.click();
+}
+
+// ── BACKUP JSON ───────────────────────────────────────────────────
+function exportBackup(){
+  const backup={
+    version:1, exportedAt:new Date().toISOString(),
+    app:'Dha Suffa University Smart Timetable',
+    timeSlots, sections, courses, faculty, rooms, schedule, nid
+  };
+  const blob=new Blob([JSON.stringify(backup,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download=`dsu-timetable-backup-${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('✓ Backup downloaded!','ok');
+}
+
+function importBackup(e){
+  const file=e.target.files[0];
+  if(!file)return;
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    try{
+      const d=JSON.parse(ev.target.result);
+      if(!d.schedule||!d.courses||!d.faculty){
+        document.getElementById('restore-err').style.display='block';
+        document.getElementById('restore-err').textContent='Invalid backup file — missing required data.';
+        return;
+      }
+      if(!confirm(`Restore backup from ${d.exportedAt||'unknown date'}?\nThis will overwrite all current data.`))return;
+      timeSlots = d.timeSlots || DEFAULT_TIME_SLOTS;
+      sections  = d.sections  || [];
+      courses   = d.courses   || [];
+      faculty   = d.faculty   || [];
+      rooms     = d.rooms     || [];
+      schedule  = d.schedule  || [];
+      nid       = d.nid       || (Math.max(0,...schedule.map(s=>s.id))+1);
+      saveAll();
+      document.getElementById('restore-ok').style.display='block';
+      document.getElementById('restore-ok').textContent=`✓ Restored ${schedule.length} classes, ${faculty.length} faculty, ${sections.length} sections.`;
+      document.getElementById('restore-err').style.display='none';
+      renderDataMgmt(); renderTT(schedule);
+      showToast('✓ Backup restored!','ok');
+    }catch(err){
+      document.getElementById('restore-err').style.display='block';
+      document.getElementById('restore-err').textContent='Failed to parse: '+err.message;
+    }
+  };
+  reader.readAsText(file);
+  e.target.value='';
+}
+
+// ── LOAD FROM URL HASH (called on startup) ────────────────────────
+function tryLoadFromURL(){
+  try{
+    const hash=window.location.hash;
+    if(!hash.startsWith('#data='))return false;
+    const encoded=hash.slice(6);
+    if(!encoded)return false;
+    const json=decompressFromBase64(encoded);
+    const d=JSON.parse(json);
+    if(!d.sch||!d.co||!d.fac)return false;
+
+    // Show a welcome banner instead of silently replacing
+    const isNew=!localStorage.getItem(SS_KEY);
+    const msg=isNew
+      ? 'A shared timetable was found in this link. Load it?'
+      : 'A shared timetable was found in this link.\n\nThis will REPLACE your current saved data. Continue?';
+
+    if(!confirm(msg))return false;
+
+    timeSlots = d.ts  || DEFAULT_TIME_SLOTS;
+    sections  = d.sec || [];
+    courses   = d.co  || [];
+    faculty   = d.fac || [];
+    rooms     = d.rm  || [];
+    schedule  = d.sch || [];
+    nid       = d.nid || (Math.max(0,...schedule.map(s=>s.id),0)+1);
+    saveAll();
+    // Clean the URL so refresh doesn't ask again
+    history.replaceState(null,'',window.location.pathname);
+    showToast(`✓ Shared timetable loaded — ${schedule.length} classes, ${faculty.length} faculty`,'ok');
+    return true;
+  }catch(e){
+    console.warn('URL import failed:',e);
+    return false;
+  }
+}
+
+// ================================================================
+// INIT
+// ================================================================
+// First check if there's a share link in the URL
+const urlLoaded = tryLoadFromURL();
+if(!urlLoaded){
+  // Normal startup: renderTT was already called inline but data may have
+  // changed so re-render here for safety
+}
+renderTT(schedule);
+populateRFTime();
+
+// Show a subtle saved indicator in header
+(function showSavedAt(){
+  try{
+    const raw=localStorage.getItem(SS_KEY);
+    if(raw){
+      const d=JSON.parse(raw);
+      if(d.savedAt){
+        const el=document.createElement('div');
+        el.style.cssText='font-size:10px;color:var(--mu);font-family:"DM Mono",monospace;cursor:pointer;';
+        el.title='Click to open Data Manager';
+        el.textContent='💾 '+new Date(d.savedAt).toLocaleTimeString();
+        el.onclick=()=>goTo('data-mgmt');
+        document.getElementById('hdr-clash').insertAdjacentElement('beforebegin',el);
+        window._updateSavedAt=()=>{el.textContent='💾 '+new Date().toLocaleTimeString();};
+      }
+    }
+  }catch(e){}
+})();
+const _origSaveAll=saveAll;
+window.saveAll=function(){_origSaveAll();try{if(window._updateSavedAt)window._updateSavedAt();}catch(e){}};
+
+</script>
+</body>
+</html>
